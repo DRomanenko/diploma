@@ -9,11 +9,7 @@
     <Scene>
       <PointLight :position="{ y: 50, z: 50 }" />
       <HemisphereLight :position="{ y: 500, z: 500 }" />
-      <Mesh
-        :size="1"
-        ref="meshC"
-        :rotation="{ y: Math.PI / 4, z: Math.PI / 4 }"
-      >
+      <Mesh ref="meshC" :rotation="{ y: Math.PI / 4, z: Math.PI / 4 }">
         <LambertMaterial />
       </Mesh>
     </Scene>
@@ -54,34 +50,45 @@ export default defineComponent({
     };
   },
   mounted() {
-    const renderer = this.$refs.rendererC as RendererPublicInterface;
-    const mesh = (this.$refs.meshC as MeshPublicInterface).mesh as THREE.Mesh;
-
-    const loader = new STLLoader();
-    if (renderer && mesh) {
-      loader.load("models/1250_polygon_sphere_100mm.stl", function (geometry) {
-        mesh.material = new THREE.MeshPhongMaterial({
-          color: 0xff5533,
-          specular: 0x111111,
-          shininess: 200,
-        });
-        mesh.geometry = geometry;
-
-        mesh.position.set(0, -0.25, 0.6);
-        mesh.rotation.set(0, -Math.PI / 2, 0);
-        mesh.scale.set(0.5, 0.5, 0.5);
-
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-      });
-
-      this.mesh = mesh;
-
-      // mesh.geometry = new THREE.TorusKnotGeometry(10, 3, 100, 16);
-      renderer.onBeforeRender(() => this.animate(this.mesh));
-    }
+    this.init();
   },
   methods: {
+    init() {
+      const renderer = this.$refs.rendererC as RendererPublicInterface;
+      const mesh = (this.$refs.meshC as MeshPublicInterface).mesh as THREE.Mesh;
+
+      // TODO Добавить плоскости
+      // TODO Добавить GUI для управления плоскостями
+      // TODO Добавить отсечение плоскостями
+
+      const loader = new STLLoader();
+      if (renderer && mesh) {
+        loader.load(
+          "models/1250_polygon_sphere_100mm.stl",
+          function (geometry) {
+            mesh.material = new THREE.MeshPhongMaterial({
+              color: 0xff5533,
+              specular: 0x111111,
+              shininess: 200,
+            });
+            mesh.geometry = geometry;
+
+            mesh.position.set(0, -0.25, 0.6);
+            mesh.rotation.set(0, -Math.PI / 2, 0);
+            mesh.scale.set(0.5, 0.5, 0.5);
+
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+          }
+        );
+
+        this.mesh = mesh;
+
+        // mesh.geometry = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+        renderer.onBeforeRender(() => this.animate(this.mesh));
+      }
+    },
+
     animate(mesh: THREE.Mesh) {
       mesh.rotation.x += 0.01;
       mesh.rotation.y += 0.01;
@@ -89,20 +96,6 @@ export default defineComponent({
     },
   },
 });
-
-/*const rendererC = ref();
-const meshC = ref();
-
-onMounted(() => {
-  const renderer = rendererC.value as RendererPublicInterface;
-  const mesh = (meshC.value as MeshPublicInterface).mesh;
-
-  mesh!.geometry = new THREE.TorusKnotGeometry(10, 3, 100, 16);
-
-  renderer.onBeforeRender(() => {
-    mesh!.rotation.x += 0.01;
-  });
-});*/
 </script>
 
 <style>
