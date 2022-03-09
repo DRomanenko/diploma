@@ -7,6 +7,7 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "lil-gui": "^0.16.1",
     "three": "^0.138.3",
     "troisjs": "^0.3.4",
     "vue": "^3.2.31"

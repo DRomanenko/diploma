@@ -6,7 +6,7 @@
     resize="window"
   >
     <Camera :position="{ z: 100 }" />
-    <Scene>
+    <Scene ref="sceneC">
       <PointLight :position="{ y: 50, z: 50 }" />
       <HemisphereLight :position="{ y: 500, z: 500 }" />
       <Mesh ref="meshC" :rotation="{ y: Math.PI / 4, z: Math.PI / 4 }">
@@ -18,6 +18,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { GUI } from "lil-gui";
 import * as THREE from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 import {
@@ -46,7 +47,24 @@ export default defineComponent({
   data() {
     return {
       mesh: new THREE.Mesh(),
-      planes: new Array<THREE.Plane>(),
+      params: {
+        animate: true,
+        planeX: {
+          constant: 0,
+          negated: false,
+          displayHelper: false,
+        },
+        planeY: {
+          constant: 0,
+          negated: false,
+          displayHelper: false,
+        },
+        planeZ: {
+          constant: 0,
+          negated: false,
+          displayHelper: false,
+        },
+      },
     };
   },
   mounted() {
@@ -56,10 +74,22 @@ export default defineComponent({
     init() {
       const renderer = this.$refs.rendererC as RendererPublicInterface;
       const mesh = (this.$refs.meshC as MeshPublicInterface).mesh as THREE.Mesh;
+      const scene: THREE.Scene = this.$refs.sceneC as THREE.Scene;
 
-      // TODO Добавить плоскости
-      // TODO Добавить GUI для управления плоскостями
       // TODO Добавить отсечение плоскостями
+
+      const planes: Array<THREE.Plane> = [
+        new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0),
+        new THREE.Plane(new THREE.Vector3(0, -1, 0), 0),
+        new THREE.Plane(new THREE.Vector3(0, 0, -1), 0),
+      ];
+      const planeHelpers: Array<THREE.PlaneHelper> = planes.map(
+        (p) => new THREE.PlaneHelper(p, 50, 0xffffff)
+      );
+      planeHelpers.forEach((ph) => {
+        ph.visible = false;
+        scene.add(ph);
+      });
 
       const loader = new STLLoader();
       if (renderer && mesh) {
@@ -84,15 +114,65 @@ export default defineComponent({
 
         this.mesh = mesh;
 
+        const gui = new GUI();
+        gui.add(this.params, "animate");
+
+        const planeX = gui.addFolder("planeX");
+        planeX
+          .add(this.params.planeX, "displayHelper")
+          .onChange((v: boolean) => (planeHelpers[0].visible = v));
+        planeX
+          .add(this.params.planeX, "constant")
+          .min(-25)
+          .max(25)
+          .onChange((d: number) => (planes[0].constant = d));
+        planeX.add(this.params.planeX, "negated").onChange(() => {
+          planes[0].negate();
+          this.params.planeX.constant = planes[0].constant;
+        });
+        planeX.open();
+
+        const planeY = gui.addFolder("planeY");
+        planeY
+          .add(this.params.planeY, "displayHelper")
+          .onChange((v: boolean) => (planeHelpers[1].visible = v));
+        planeY
+          .add(this.params.planeY, "constant")
+          .min(-25)
+          .max(25)
+          .onChange((d: number) => (planes[1].constant = d));
+        planeY.add(this.params.planeY, "negated").onChange(() => {
+          planes[1].negate();
+          this.params.planeY.constant = planes[1].constant;
+        });
+        planeY.open();
+
+        const planeZ = gui.addFolder("planeZ");
+        planeZ
+          .add(this.params.planeZ, "displayHelper")
+          .onChange((v: boolean) => (planeHelpers[2].visible = v));
+        planeZ
+          .add(this.params.planeZ, "constant")
+          .min(-25)
+          .max(25)
+          .onChange((d: number) => (planes[2].constant = d));
+        planeZ.add(this.params.planeZ, "negated").onChange(() => {
+          planes[2].negate();
+          this.params.planeZ.constant = planes[2].constant;
+        });
+        planeZ.open();
+
         // mesh.geometry = new THREE.TorusKnotGeometry(10, 3, 100, 16);
         renderer.onBeforeRender(() => this.animate(this.mesh));
       }
     },
 
     animate(mesh: THREE.Mesh) {
-      mesh.rotation.x += 0.01;
-      mesh.rotation.y += 0.01;
-      mesh.rotation.z += 0.01;
+      if (this.params.animate) {
+        mesh.rotation.x += 0.01;
+        mesh.rotation.y += 0.01;
+        mesh.rotation.z += 0.01;
+      }
     },
   },
 });
