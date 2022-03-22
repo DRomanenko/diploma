@@ -93,6 +93,7 @@ export default defineComponent({
 
       const loader = new STLLoader();
       if (renderer && mesh) {
+        renderer.renderer.localClippingEnabled = true;
         loader.load(
           "models/1250_polygon_sphere_100mm.stl",
           function (geometry) {
@@ -100,6 +101,7 @@ export default defineComponent({
               color: 0xff5533,
               specular: 0x111111,
               shininess: 200,
+              clippingPlanes: planes,
             });
             mesh.geometry = geometry;
 
