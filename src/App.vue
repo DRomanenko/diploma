@@ -7,7 +7,7 @@
   >
     <Camera :position="{ z: 100 }" />
     <Scene ref="sceneC">
-      <PointLight :position="{ y: 50, z: 50 }" />
+      <AmbientLight :intensity="0.1" />
       <HemisphereLight :position="{ y: 500, z: 500 }" />
       <Mesh ref="meshC" :rotation="{ y: Math.PI / 4, z: Math.PI / 4 }">
         <LambertMaterial />
@@ -27,7 +27,7 @@ import {
   LambertMaterial,
   Mesh,
   MeshPublicInterface,
-  PointLight,
+  AmbientLight,
   Renderer,
   RendererPublicInterface,
   Scene,
@@ -39,7 +39,7 @@ export default defineComponent({
     Mesh,
     Camera,
     LambertMaterial,
-    PointLight,
+    AmbientLight,
     HemisphereLight,
     Renderer,
     Scene,
@@ -48,7 +48,7 @@ export default defineComponent({
     return {
       mesh: new THREE.Mesh(),
       params: {
-        animate: true,
+        animate: false,
         planeX: {
           constant: 0,
           negated: false,
@@ -79,15 +79,15 @@ export default defineComponent({
       // TODO Добавить отсечение плоскостями
 
       const planes: Array<THREE.Plane> = [
-        new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0),
+        // new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0),
         new THREE.Plane(new THREE.Vector3(0, -1, 0), 0),
-        new THREE.Plane(new THREE.Vector3(0, 0, -1), 0),
+        // new THREE.Plane(new THREE.Vector3(0, 0, -1), 0),
       ];
       const planeHelpers: Array<THREE.PlaneHelper> = planes.map(
         (p) => new THREE.PlaneHelper(p, 50, 0xffffff)
       );
       planeHelpers.forEach((ph) => {
-        ph.visible = false;
+        ph.visible = true;
         scene.add(ph);
       });
 
@@ -98,10 +98,9 @@ export default defineComponent({
           "models/1250_polygon_sphere_100mm.stl",
           function (geometry) {
             mesh.material = new THREE.MeshPhongMaterial({
-              color: 0xff5533,
-              specular: 0x111111,
-              shininess: 200,
               clippingPlanes: planes,
+              clipIntersection: true,
+              clipShadows: true,
             });
             mesh.geometry = geometry;
 
