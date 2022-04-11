@@ -26,9 +26,17 @@ const params = {
     negated: false,
     displayHelper: true,
   },
+  scale: 0.03,
 };
 
 export default {
+  mounted: async function () {
+    geometry = await this.loadGeometry();
+    geometry.scale(params.scale, params.scale, params.scale);
+    this.init();
+    window.addEventListener("resize", this.onWindowResize);
+    new OrbitControls(camera, renderer.domElement);
+  },
   // TODO 100 добавить vite.config.ts (перейти на vite) tsconfig.json .eslintrc.js
   methods: {
     init: function () {
@@ -59,6 +67,7 @@ export default {
       this.createLights();
       this.setRender();
     },
+
     setGUI: function () {
       const gui = new GUI();
       gui.add(params, "animate");
@@ -77,11 +86,23 @@ export default {
         params.planeY.constant = planes[0].constant;
       });
       planeY.open();
+
+      const scale = gui.addFolder("scale");
+      scale
+        .add(params, "scale")
+        .min(0)
+        .max(1)
+        .onChange((d) => {
+          params.scale = d;
+        });
+      scale.open();
     },
+
     setScene: function () {
       scene = new THREE.Scene();
       scene.background = new THREE.Color("black");
     },
+
     setCamera: function () {
       camera = new THREE.PerspectiveCamera(
         35,
@@ -143,10 +164,11 @@ export default {
       }
 
       const material = new THREE.MeshStandardMaterial({
+        clippingPlanes: planes,
+
         color: 0xffc107,
         metalness: 0.1,
         roughness: 0.75,
-        clippingPlanes: planes,
         shadowSide: THREE.DoubleSide,
       });
 
@@ -192,6 +214,7 @@ export default {
 
       return group;
     },
+
     createLights: function () {
       const ambientLight = new THREE.HemisphereLight(
         0xddeeff, // sky color
@@ -204,6 +227,7 @@ export default {
 
       scene.add(ambientLight, mainLight);
     },
+
     setRender: function () {
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(container.clientWidth, container.clientHeight);
@@ -240,13 +264,6 @@ export default {
       camera.updateProjectionMatrix();
       renderer.setSize(container.clientWidth, container.clientHeight);
     },
-  },
-  mounted: async function () {
-    geometry = await this.loadGeometry();
-    geometry.scale(0.03, 0.03, 0.03);
-    this.init();
-    window.addEventListener("resize", this.onWindowResize);
-    new OrbitControls(camera, renderer.domElement);
   },
 };
 </script>
