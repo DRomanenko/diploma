@@ -21,18 +21,8 @@ let planes, planeObjects, planeHelpers;
 // let clock;
 const params = {
   animate: false,
-  planeX: {
-    constant: 1,
-    negated: false,
-    displayHelper: true,
-  },
   planeY: {
     constant: 0,
-    negated: false,
-    displayHelper: true,
-  },
-  planeZ: {
-    constant: 1,
     negated: false,
     displayHelper: true,
   },
@@ -45,13 +35,20 @@ export default {
       container = document.querySelector("#app");
       this.setScene();
       this.setCamera();
-      // TODO 2 add borders
       // TODO 3 более прозрачные границы
       planes = [
-        new THREE.Plane(new THREE.Vector3(-1, 0, 0), params.planeX.constant),
         new THREE.Plane(new THREE.Vector3(0, -1, 0), params.planeY.constant),
-        new THREE.Plane(new THREE.Vector3(0, 0, -1), params.planeZ.constant),
+
+        new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1),
+        new THREE.Plane(new THREE.Vector3(-1, 0, 0), -1).negate(),
+
+        new THREE.Plane(new THREE.Vector3(0, -1, 0), 1),
+        new THREE.Plane(new THREE.Vector3(0, -1, 0), -1).negate(),
+
+        new THREE.Plane(new THREE.Vector3(0, 0, -1), 1),
+        new THREE.Plane(new THREE.Vector3(0, 0, -1), -1).negate(),
       ];
+
       planeHelpers = planes.map((p) => new THREE.PlaneHelper(p, 2, 0xffffff));
       planeHelpers.forEach((ph) => {
         ph.visible = true;
@@ -66,50 +63,20 @@ export default {
       const gui = new GUI();
       gui.add(params, "animate");
 
-      const planeX = gui.addFolder("planeX");
-      planeX
-        .add(params.planeX, "displayHelper")
-        .onChange((v) => (planeHelpers[0].visible = v));
-      planeX
-        .add(params.planeX, "constant")
-        .min(-1)
-        .max(1)
-        .onChange((d) => (planes[0].constant = d));
-      planeX.add(params.planeX, "negated").onChange(() => {
-        planes[0].negate();
-        params.planeX.constant = planes[0].constant;
-      });
-      planeX.open();
-
       const planeY = gui.addFolder("planeY");
       planeY
         .add(params.planeY, "displayHelper")
-        .onChange((v) => (planeHelpers[1].visible = v));
+        .onChange((v) => (planeHelpers[0].visible = v));
       planeY
         .add(params.planeY, "constant")
         .min(-1)
         .max(1)
-        .onChange((d) => (planes[1].constant = d));
+        .onChange((d) => (planes[0].constant = d));
       planeY.add(params.planeY, "negated").onChange(() => {
-        planes[1].negate();
-        params.planeY.constant = planes[1].constant;
+        planes[0].negate();
+        params.planeY.constant = planes[0].constant;
       });
       planeY.open();
-
-      const planeZ = gui.addFolder("planeZ");
-      planeZ
-        .add(params.planeZ, "displayHelper")
-        .onChange((v) => (planeHelpers[2].visible = v));
-      planeZ
-        .add(params.planeZ, "constant")
-        .min(-1)
-        .max(1)
-        .onChange((d) => (planes[2].constant = d));
-      planeZ.add(params.planeZ, "negated").onChange(() => {
-        planes[2].negate();
-        params.planeZ.constant = planes[2].constant;
-      });
-      planeZ.open();
     },
     setScene: function () {
       scene = new THREE.Scene();
@@ -132,59 +99,14 @@ export default {
     },
 
     setMaterial: function () {
-      //Does not work by setting background for scene
-      // const geometry = new THREE.TorusKnotGeometry(0.4, 0.15, 220, 60);
-      // const textureLoader = new THREE.TextureLoader();
-      // const texture = textureLoader.load(
-      //   "https://images.unsplash.com/photo-1515387784663-e2e29a23f69e?ixlib=rb-1.2.1&w=1000&q=80"
-      // );
-      // texture.encoding = THREE.sRGBEncoding;
-      // texture.anisotropy = 16;
-      // const material = new THREE.MeshStandardMaterial({
-      //   map: texture,
-      // });
-      // cube = new THREE.Mesh(geometry, material);
-      // scene.add(cube);
-      // TODO 1 add STLLoader It can be loaded successfully when I created stl binary
-
-      // const loader = new STLLoader();
-      // loader.load(
-      //   "models/Model_44_S3.540.45_T3.8.46_E4.3.47_R5.7.stl",
-      //   function (geometry) {
-      //     const material = new THREE.MeshPhongMaterial({
-      //       color: 0xff5533,
-      //       specular: 0x111111,
-      //       shininess: 200,
-      //     });
-      //     const mesh = new THREE.Mesh(geometry, material);
-      //
-      //     mesh.position.set(0, -0.25, 0.6);
-      //     mesh.rotation.set(0, -Math.PI / 2, 0);
-      //     mesh.scale.set(0.03, 0.03, 0.03);
-      //
-      //     mesh.castShadow = true;
-      //     mesh.receiveShadow = true;
-      //
-      //     console.log(geometry);
-      //     scene.add(mesh);
-      //   },
-      //   (xhr) => {
-      //     console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
-      //   },
-      //   (error) => {
-      //     console.log(error);
-      //   }
-      // );
-
-      // const geometry = new THREE.TorusKnotGeometry(0.4, 0.15, 220, 60);
       object = new THREE.Group();
       scene.add(object);
 
       // Set up clip plane rendering
       planeObjects = [];
-      const planeGeom = new THREE.PlaneGeometry(4, 4);
+      const planeGeom = new THREE.PlaneGeometry(2, 2, 1, 1);
 
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < planes.length; i++) {
         const poGroup = new THREE.Group();
         const plane = planes[i];
         const stencilGroup = this.createPlaneStencilGroup(
@@ -225,30 +147,13 @@ export default {
         metalness: 0.1,
         roughness: 0.75,
         clippingPlanes: planes,
-        clipShadows: true,
         shadowSide: THREE.DoubleSide,
       });
 
       // add the color
       const clippedColorFront = new THREE.Mesh(geometry, material);
-      clippedColorFront.castShadow = true;
-      clippedColorFront.receiveShadow = true;
       clippedColorFront.renderOrder = 6;
       object.add(clippedColorFront);
-
-      const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(9, 9, 1, 1),
-        new THREE.ShadowMaterial({
-          color: 0x000000,
-          opacity: 0.25,
-          side: THREE.DoubleSide,
-        })
-      );
-
-      ground.rotation.x = -Math.PI / 2; // rotates X/Y to X/Z
-      ground.position.y = -1;
-      ground.receiveShadow = true;
-      scene.add(ground);
     },
 
     createPlaneStencilGroup: function (geometry, plane, renderOrder) {
