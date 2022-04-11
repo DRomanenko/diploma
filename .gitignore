@@ -21,3 +21,13 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# testing
+/coverage
+
+# production
+/build
+
+*.lock
+
+/models
