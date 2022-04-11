@@ -30,4 +30,4 @@ pnpm-debug.log*
 
 *.lock
 
-/models
+/public/models

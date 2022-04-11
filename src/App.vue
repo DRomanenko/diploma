@@ -5,15 +5,17 @@
 <script>
 import * as THREE from "three";
 import { GUI } from "lil-gui";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-// import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 
+const loader = new STLLoader();
 // const OrbitControls = require('three-orbit-controls')(THREE)
 let container;
 let camera;
 let renderer;
 let scene;
 
+let geometry;
 let object;
 let planes, planeObjects, planeHelpers;
 // let clock;
@@ -122,6 +124,13 @@ export default {
       );
       camera.position.set(0, 0, 10);
     },
+
+    loadGeometry: async function () {
+      return await loader.loadAsync(
+        "models/Model_44_S3.540.45_T3.8.46_E4.3.47_R5.7.stl"
+      );
+    },
+
     setMaterial: function () {
       //Does not work by setting background for scene
       // const geometry = new THREE.TorusKnotGeometry(0.4, 0.15, 220, 60);
@@ -136,8 +145,38 @@ export default {
       // });
       // cube = new THREE.Mesh(geometry, material);
       // scene.add(cube);
-      // TODO 1 add STLLoader
-      const geometry = new THREE.TorusKnotGeometry(0.4, 0.15, 220, 60);
+      // TODO 1 add STLLoader It can be loaded successfully when I created stl binary
+
+      // const loader = new STLLoader();
+      // loader.load(
+      //   "models/Model_44_S3.540.45_T3.8.46_E4.3.47_R5.7.stl",
+      //   function (geometry) {
+      //     const material = new THREE.MeshPhongMaterial({
+      //       color: 0xff5533,
+      //       specular: 0x111111,
+      //       shininess: 200,
+      //     });
+      //     const mesh = new THREE.Mesh(geometry, material);
+      //
+      //     mesh.position.set(0, -0.25, 0.6);
+      //     mesh.rotation.set(0, -Math.PI / 2, 0);
+      //     mesh.scale.set(0.03, 0.03, 0.03);
+      //
+      //     mesh.castShadow = true;
+      //     mesh.receiveShadow = true;
+      //
+      //     console.log(geometry);
+      //     scene.add(mesh);
+      //   },
+      //   (xhr) => {
+      //     console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+      //   },
+      //   (error) => {
+      //     console.log(error);
+      //   }
+      // );
+
+      // const geometry = new THREE.TorusKnotGeometry(0.4, 0.15, 220, 60);
       object = new THREE.Group();
       scene.add(object);
 
@@ -193,6 +232,7 @@ export default {
       // add the color
       const clippedColorFront = new THREE.Mesh(geometry, material);
       clippedColorFront.castShadow = true;
+      clippedColorFront.receiveShadow = true;
       clippedColorFront.renderOrder = 6;
       object.add(clippedColorFront);
 
@@ -210,6 +250,7 @@ export default {
       ground.receiveShadow = true;
       scene.add(ground);
     },
+
     createPlaneStencilGroup: function (geometry, plane, renderOrder) {
       const group = new THREE.Group();
       const baseMat = new THREE.MeshBasicMaterial();
@@ -295,7 +336,9 @@ export default {
       renderer.setSize(container.clientWidth, container.clientHeight);
     },
   },
-  mounted: function () {
+  mounted: async function () {
+    geometry = await this.loadGeometry();
+    geometry.scale(0.03, 0.03, 0.03);
     this.init();
     window.addEventListener("resize", this.onWindowResize);
     new OrbitControls(camera, renderer.domElement);
