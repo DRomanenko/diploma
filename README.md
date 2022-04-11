@@ -1,4 +1,24 @@
-# Vue 3 + Typescript + Vite + TroisJS
+# diploma
 
-This template should help get you started developing with Vue 3 and Typescript in Vite.
+## Project setup
+```
+yarn install
+```
 
+### Compiles and hot-reloads for development
+```
+yarn serve
+```
+
+### Compiles and minifies for production
+```
+yarn build
+```
+
+### Lints and fixes files
+```
+yarn lint
+```
+
+### Customize configuration
+See [Configuration Reference](https://cli.vuejs.org/config/).
