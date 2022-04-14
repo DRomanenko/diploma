@@ -23,8 +23,6 @@ let planes, planeObjects, planeHelpers;
 
 const gui = new GUI();
 
-// let strDownloadMime = "image/octet-stream";
-// let clock;
 const params = {
   planeY: {
     constant: 0,
@@ -32,10 +30,6 @@ const params = {
     displayHelper: true,
   },
   scale: 0.03,
-  // editVue: function () {
-  //   mode.slicing = !mode.slicing;
-  //   this.setCamera();
-  // },
 };
 
 const mode = {
@@ -45,7 +39,24 @@ const mode = {
 export default {
   mounted: async function () {
     geometry = await this.loadGeometry();
-    geometry.scale(params.scale, params.scale, params.scale);
+    let box = geometry.boundingBox;
+
+    let size = new THREE.Vector3(0, 0, 0);
+    size = box.getSize(size);
+    const scale = 2 / Math.max(size.x, size.y, size.z);
+    geometry.scale(scale, scale, scale);
+
+    const points = geometry.attributes.position.array;
+    // TODO 4 вместо -1 границы рабочей области
+    for (let i = 0; i < points.length; i += 3) {
+      points[i] += -1 - box.min.x;
+      points[i + 1] += -1 - box.min.y;
+      points[i + 2] += -1 - box.min.z;
+    }
+
+    console.log(box);
+    console.log(geometry);
+
     this.setGUI();
     this.init();
     window.addEventListener("resize", this.onWindowResize);
@@ -53,9 +64,12 @@ export default {
   // TODO 100 добавить vite.config.ts (перейти на vite) tsconfig.json .eslintrc.js
   methods: {
     loadGeometry: async function () {
-      return await loader.loadAsync(
+      const geometry = await loader.loadAsync(
         "models/Model_44_S3.540.45_T3.8.46_E4.3.47_R5.7.stl"
+        //  "models/1250_polygon_sphere_100mm.STL"
       );
+      geometry.computeBoundingBox();
+      return geometry;
     },
 
     sleep: function (time) {
@@ -82,7 +96,7 @@ export default {
       for (let i = -number_slice; i <= number_slice; i++) {
         planes[0].constant = (1 / number_slice) * i;
         progress_gui.save();
-        await this.sleep(100);
+        await this.sleep(50);
 
         const canvas = document.getElementsByTagName("canvas")[0];
         let image = new Image();
@@ -244,7 +258,6 @@ export default {
         po.onAfterRender = function (renderer) {
           renderer.clearStencil();
         };
-
         po.renderOrder = i + 1.1;
 
         object.add(stencilGroup);
