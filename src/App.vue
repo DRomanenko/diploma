@@ -181,6 +181,18 @@ export default {
       this.createLights();
       this.setRender();
       this.setCamera();
+      const geometryy = new THREE.BoxGeometry(2, 2, 2);
+      console.log(geometryy);
+      // const material = new THREE.MeshBasicMaterial({
+      //   transparent: true,
+      //   opacity: 0.3,
+      // });
+      // const cube = new THREE.Mesh(geometryy, material);
+      // scene.add(cube);
+      var geo = new THREE.EdgesGeometry(geometryy);
+      var mat = new THREE.LineBasicMaterial({ color: "white", linewidth: 4 });
+      var wireframe = new THREE.LineSegments(geo, mat);
+      scene.add(wireframe);
     },
 
     setScene: function () {
@@ -216,7 +228,7 @@ export default {
         );
         camera.position.set(0, 0, 10);
         planeHelpers.forEach((ph) => {
-          ph.visible = true;
+          ph.visible = false;
         });
         object.children[7].visible = true;
         new OrbitControls(camera, renderer.domElement);
