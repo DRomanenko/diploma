@@ -6,13 +6,15 @@ class Gui {
   }
 
   disableAll(disabled) {
-    this.root.controllers.forEach((folder) => {
-      folder.disable(!disabled);
-    });
+    this.disableAllInGUI(this.root, disabled);
     this.root.folders.forEach((childGUI) => {
-      childGUI.controllers.forEach((folder) => {
-        folder.disable(!disabled);
-      });
+      this.disableAllInGUI(childGUI, disabled);
+    });
+  }
+
+  disableAllInGUI(gui, disabled) {
+    gui.controllers.forEach((folder) => {
+      folder.disable(disabled);
     });
   }
 }

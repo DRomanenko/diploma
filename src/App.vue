@@ -5,15 +5,15 @@
 </template>
 
 <script>
-import { config } from "@/utils/config";
+import { Gui } from "@/utils/gui";
 import { Scene } from "@/scene/scene";
+import { common } from "@/utils/common";
 import { GeometryLoader } from "@/utils/loader";
 
-import { Gui } from "@/utils/gui";
-
 let scene;
-const loader = new GeometryLoader();
+
 const gui = new Gui();
+const loader = new GeometryLoader();
 
 export default {
   name: "App",
@@ -32,12 +32,12 @@ export default {
 
     this.initGUI();
   },
-  // TODO 100 добавить vite.config.ts (перейти на vite) tsconfig.json .eslintrc.js
+  // TODO 100 добавить vite.common.ts (перейти на vite) tsconfig.json .eslintrc.js
   methods: {
-    saveImages() {
-      if (config.mode === "slicing") {
+    async saveImages() {
+      if (common.mode === "slicing") {
         gui.disableAll(true);
-        scene.saveImages();
+        await scene.saveImages();
         gui.disableAll(false);
       } else {
         alert("Export is only available in 'slicing' mode");
@@ -45,18 +45,18 @@ export default {
     },
 
     initGUI() {
-      gui.root.add(config, "mode", ["view", "slicing"]).onChange((value) => {
-        config.mode = value;
+      gui.root.add(common, "mode", ["view", "slicing"]).onChange((value) => {
+        common.mode = value;
         scene.update();
       });
       const slicing = gui.root.addFolder("slicing");
-      slicing.add(config.slicing, "viewSlice");
+      slicing.add(common.slicing, "viewSlice");
       slicing.add(this, "saveImages").name("export");
       slicing.open();
 
       const clippingPlane = gui.root.addFolder("ClippingPlane");
       clippingPlane
-        .add(config.clippingPlane, "constant")
+        .add(common.clippingPlane, "constant")
         .min(-1)
         .max(1)
         .listen()

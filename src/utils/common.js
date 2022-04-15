@@ -1,6 +1,6 @@
 import * as THREE from "three";
 
-const config = {
+const common = {
   mode: "view",
   slicing: {
     viewSlice: false,
@@ -35,4 +35,4 @@ const config = {
   },
 };
 
-export { config };
+export { common };

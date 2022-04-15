@@ -1,4 +1,4 @@
-import { config } from "@/utils/config";
+import { common } from "@/utils/common";
 import { sleep } from "@/utils/utils";
 import { Exporter } from "@/utils/exporter";
 
@@ -120,12 +120,12 @@ class Scene {
   }
 
   #initCamera() {
-    switch (config.mode) {
+    switch (common.mode) {
       case "view": {
         const fov = 45;
         const aspect = this._width / this._height;
         const near = 0.05;
-        const far = config.defaultMapSize;
+        const far = common.defaultMapSize;
 
         this._camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
         this._camera.position.set(0, 0, 10);
@@ -137,14 +137,14 @@ class Scene {
       }
       case "slicing": {
         this._camera = new THREE.OrthographicCamera(
-          -config.workspace.width,
-          config.workspace.depth,
-          config.workspace.depth / 2,
-          -config.workspace.width / 2
+          -common.workspace.width,
+          common.workspace.depth,
+          common.workspace.depth / 2,
+          -common.workspace.width / 2
         );
-        this._camera.position.set(0, config.workspace.height, 0);
+        this._camera.position.set(0, common.workspace.height, 0);
         this._camera.lookAt(
-          new THREE.Vector3(0, config.workspace.height / 2, 0)
+          new THREE.Vector3(0, common.workspace.height / 2, 0)
         );
         this._models.visible = false;
         this._workspaceView.visible = false;
@@ -157,24 +157,24 @@ class Scene {
   #initWorkspace() {
     this._workspace = [
       // Borders on the x-axis
-      new THREE.Plane(new THREE.Vector3(-1, 0, 0), config.workspace.width / 2),
+      new THREE.Plane(new THREE.Vector3(-1, 0, 0), common.workspace.width / 2),
       new THREE.Plane(
         new THREE.Vector3(-1, 0, 0),
-        -config.workspace.width / 2
+        -common.workspace.width / 2
       ).negate(),
 
       // Borders on the y-axis
-      new THREE.Plane(new THREE.Vector3(0, -1, 0), config.workspace.height / 2),
+      new THREE.Plane(new THREE.Vector3(0, -1, 0), common.workspace.height / 2),
       new THREE.Plane(
         new THREE.Vector3(0, -1, 0),
-        -config.workspace.height / 2
+        -common.workspace.height / 2
       ).negate(),
 
       // Borders on the z-axis
-      new THREE.Plane(new THREE.Vector3(0, 0, -1), config.workspace.depth / 2),
+      new THREE.Plane(new THREE.Vector3(0, 0, -1), common.workspace.depth / 2),
       new THREE.Plane(
         new THREE.Vector3(0, 0, -1),
-        -config.workspace.depth / 2
+        -common.workspace.depth / 2
       ).negate(),
     ];
 
@@ -182,37 +182,37 @@ class Scene {
       // Borders on the x-axis
       new THREE.PlaneHelper(
         this._workspace[0],
-        config.workspace.width,
-        config.workspace.color
+        common.workspace.width,
+        common.workspace.color
       ),
       new THREE.PlaneHelper(
         this._workspace[1],
-        config.workspace.width,
-        config.workspace.color
+        common.workspace.width,
+        common.workspace.color
       ),
 
       // Borders on the y-axis
       new THREE.PlaneHelper(
         this._workspace[2],
-        config.workspace.height,
-        config.workspace.color
+        common.workspace.height,
+        common.workspace.color
       ),
       new THREE.PlaneHelper(
         this._workspace[3],
-        config.workspace.height,
-        config.workspace.color
+        common.workspace.height,
+        common.workspace.color
       ),
 
       // Borders on the z-axis
       new THREE.PlaneHelper(
         this._workspace[4],
-        config.workspace.depth,
-        config.workspace.color
+        common.workspace.depth,
+        common.workspace.color
       ),
       new THREE.PlaneHelper(
         this._workspace[5],
-        config.workspace.depth,
-        config.workspace.color
+        common.workspace.depth,
+        common.workspace.color
       ),
     ];
 
@@ -227,13 +227,13 @@ class Scene {
   #initClippingPlane() {
     this._clippingPlane = new THREE.Plane(
       new THREE.Vector3(0, -1, 0),
-      config.clippingPlane.constant
+      common.clippingPlane.constant
     );
 
     this._clippingPlaneView = new THREE.PlaneHelper(
       this._clippingPlane,
       2,
-      config.clippingPlane.color
+      common.clippingPlane.color
     );
 
     this._scene.add(this._clippingPlaneView);
@@ -242,29 +242,29 @@ class Scene {
   #initClippingView() {
     // Borders on the x-axis
     const planeGeometryX = new THREE.PlaneGeometry(
-      config.workspace.depth,
-      config.workspace.height
+      common.workspace.depth,
+      common.workspace.height
     );
     this.#createClippingView(planeGeometryX, 0, 2);
 
     // Borders on the y-axis
     const planeGeometryY = new THREE.PlaneGeometry(
-      config.workspace.width,
-      config.workspace.depth
+      common.workspace.width,
+      common.workspace.depth
     );
     this.#createClippingView(planeGeometryY, 2, 4);
 
     // Borders on the z-axis
     const planeGeometryZ = new THREE.PlaneGeometry(
-      config.workspace.width,
-      config.workspace.height
+      common.workspace.width,
+      common.workspace.height
     );
     this.#createClippingView(planeGeometryZ, 4, 6);
 
     // Clipping Plane
     const clippingPlaneGeometry = new THREE.PlaneGeometry(
-      config.workspace.width,
-      config.workspace.height
+      common.workspace.width,
+      common.workspace.height
     );
     this.#createClippingView(clippingPlaneGeometry, 6, 7);
 
@@ -273,7 +273,7 @@ class Scene {
 
   #createClippingView(planeGeometry, index_from, index_to) {
     const planes = this._workspace.concat(this._clippingPlane);
-    const material = config.clippingMaterial.clone();
+    const material = common.clippingMaterial.clone();
     for (let i = index_from; i < index_to; i++) {
       const plane = planes[i];
       material.clippingPlanes = planes.filter((p) => p !== plane);
@@ -304,9 +304,9 @@ class Scene {
     const points = geometry.attributes.position.array;
     for (let i = 0; i < points.length; i += 3) {
       // TODO убрать + 0.5
-      points[i] += -(config.workspace.width / 2 + 0.5) - box.min.x;
-      points[i + 1] += -config.workspace.height / 2 - box.min.y;
-      points[i + 2] += -config.workspace.depth / 2 - box.min.z;
+      points[i] += -(common.workspace.width / 2 + 0.5) - box.min.x;
+      points[i + 1] += -common.workspace.height / 2 - box.min.y;
+      points[i + 2] += -common.workspace.depth / 2 - box.min.z;
     }
     return geometry;
   }
@@ -413,10 +413,10 @@ class Scene {
 
   async saveImages() {
     const exporter = new Exporter();
-    const numberSlices = config.slicing.max_number_slice;
+    const numberSlices = common.slicing.max_number_slice;
     for (let i = -numberSlices; i <= numberSlices; i++) {
-      config.clippingPlane.constant = (1 / numberSlices) * i;
-      this._clippingPlane.constant = config.clippingPlane.constant;
+      common.clippingPlane.constant = (1 / numberSlices) * i;
+      this._clippingPlane.constant = common.clippingPlane.constant;
       this._renderer.render(this._scene, this._camera);
       this._scene.onAfterRender = () => {
         const canvas = document.getElementsByTagName("canvas")[0];
@@ -424,13 +424,14 @@ class Scene {
         image.src = canvas.toDataURL();
         exporter.addImage("slice", image, numberSlices + i);
       };
-      if (config.slicing.viewSlice) {
+      if (common.slicing.viewSlice) {
         await sleep(1);
       }
     }
     exporter.saveAsZip("slicing");
-    config.clippingPlane.constant = 0;
+    common.clippingPlane.constant = 0;
     this._clippingPlane.constant = 0;
+    this._renderer.render(this._scene, this._camera);
   }
 }
 
