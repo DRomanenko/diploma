@@ -426,11 +426,11 @@ class Scene {
   async saveImages() {
     const exporter = new Exporter();
     let min_height = -common.workspace.height / 2;
-    let height = -common.workspace.height;
+    let height = min_height;
     this._models.children.forEach((model) => {
       height = Math.max(height, this.getBounding(model.geometry).height);
     });
-    const numberSlices = common.slicing.max_number_slice;
+    const numberSlices = height / common.slicing.step;
     for (let i = 0; i <= numberSlices; i++) {
       common.clippingPlane.constant = min_height + (height / numberSlices) * i;
       this._clippingPlane.constant = common.clippingPlane.constant;

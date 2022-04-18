@@ -4,7 +4,7 @@ const common = {
   mode: "view",
   slicing: {
     viewSlice: false,
-    max_number_slice: 100,
+    step: 0.01,
   },
   defaultMapSize: 1024,
   workspace: {
