@@ -24,11 +24,16 @@ export default {
   },
   mounted: async function () {
     const canvas = document.querySelector("#app");
-    const geometry = await loader.load(
+    const geometry1 = await loader.load(
       "models/Model_44_S3.540.45_T3.8.46_E4.3.47_R5.7.stl"
     );
     scene = new Scene(canvas);
-    scene.addGeometry(geometry);
+    scene.addGeometry(geometry1);
+    const geometry2 = await loader.load("models/default.stl");
+    scene.addGeometry(geometry2);
+    scene.addGeometry(geometry1);
+    scene.addGeometry(geometry2);
+    scene.addGeometry(geometry2);
 
     this.initGUI();
   },
@@ -49,6 +54,7 @@ export default {
         common.mode = value;
         scene.update();
       });
+      gui.root.add(scene, "packing").name("packing");
       const slicing = gui.root.addFolder("slicing");
       slicing.add(common.slicing, "viewSlice");
       slicing.add(this, "saveImages").name("export");

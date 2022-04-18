@@ -2,6 +2,7 @@ import { common } from "@/utils/common";
 import { sleep } from "@/utils/utils";
 import { Exporter } from "@/utils/exporter";
 
+import potpack from "potpack";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
@@ -92,7 +93,7 @@ class Scene {
     this._renderer = new THREE.WebGLRenderer({
       // canvas: canvas,
       alpha: true,
-      antialias: true, // убрал, поскольку оставляет неприятную лесенку на картинке
+      antialias: true, // false preferred for 'slicing' / true preferred for 'view'
       premultipliedAlpha: false,
       preserveDrawingBuffer: true,
     });
@@ -286,59 +287,48 @@ class Scene {
     }
   }
 
-  addGeometry(geometry) {
-    geometry = this.#prepareGeometry(geometry);
+  addGeometry(new_geometry) {
+    const geometry = this.#prepareGeometry(new_geometry.clone());
     this._modelsGeometry.push(geometry);
-    this.#prepareView();
+
+    const object = new THREE.Group();
+    const planes = this._workspace.concat(this._clippingPlane);
+    for (let q = 0; q < planes.length; q++) {
+      const plane = planes[q];
+      const stencilGroup = Scene.#createPlaneStencilGroup(
+        geometry,
+        plane,
+        q + 1
+      );
+      object.add(stencilGroup);
+    }
+
+    const material = new THREE.MeshLambertMaterial({
+      clippingPlanes: planes,
+      clipIntersection: false,
+
+      color: 0xffc107,
+    });
+    const clippedColorFront = new THREE.Mesh(geometry, material);
+    clippedColorFront.renderOrder = 6;
+    this._models.add(clippedColorFront);
+    this._scene.add(this._models);
+    this._scene.add(object);
   }
 
   #prepareGeometry(geometry) {
-    let box = geometry.boundingBox;
+    let bounding = this.getBounding(geometry);
 
     let size = new THREE.Vector3(0, 0, 0);
-    size = box.getSize(size);
+    size = bounding.box.getSize(size);
 
-    const scale = 2 / Math.max(size.x, size.y, size.z);
+    const scale = common.workspace.height / Math.max(size.x, size.y, size.z);
     geometry.scale(scale, scale, scale);
 
-    const points = geometry.attributes.position.array;
-    for (let i = 0; i < points.length; i += 3) {
-      // TODO убрать + 0.5
-      points[i] += -(common.workspace.width / 2 + 0.5) - box.min.x;
-      points[i + 1] += -common.workspace.height / 2 - box.min.y;
-      points[i + 2] += -common.workspace.depth / 2 - box.min.z;
-    }
+    const min_y = -common.workspace.height / 2;
+    this.move(geometry, new THREE.Vector3(0, min_y - bounding.min.y, 0));
+
     return geometry;
-  }
-
-  #prepareView() {
-    const object = new THREE.Group();
-    const planes = this._workspace.concat(this._clippingPlane);
-    for (let i = 0; i < this._modelsGeometry.length; i++) {
-      const geometry = this._modelsGeometry[i];
-      for (let q = 0; q < planes.length; q++) {
-        const plane = planes[q];
-        const stencilGroup = Scene.#createPlaneStencilGroup(
-          geometry,
-          plane,
-          q + 1
-        );
-        object.add(stencilGroup);
-      }
-
-      const material = new THREE.MeshStandardMaterial({
-        clippingPlanes: planes,
-        color: 0xffc107,
-        metalness: 0.1,
-        roughness: 0.75,
-        shadowSide: THREE.DoubleSide,
-      });
-      const clippedColorFront = new THREE.Mesh(geometry, material);
-      clippedColorFront.renderOrder = 6;
-      this._models.add(clippedColorFront);
-    }
-    this._scene.add(this._models);
-    this._scene.add(object);
   }
 
   render() {
@@ -432,6 +422,75 @@ class Scene {
     common.clippingPlane.constant = 0;
     this._clippingPlane.constant = 0;
     this._renderer.render(this._scene, this._camera);
+  }
+
+  move(geometry, vector) {
+    const points = geometry.attributes.position.array;
+    for (let i = 0; i < points.length; i += 3) {
+      points[i] += vector.x;
+      points[i + 1] += vector.y;
+      points[i + 2] += vector.z;
+    }
+  }
+
+  getBounding(geometry) {
+    if (null === geometry.boundingBox) {
+      geometry.computeBoundingBox();
+    }
+    const box = geometry.boundingBox;
+    return {
+      box: box,
+      width: box.max.x - box.min.x,
+      height: box.max.y - box.min.y,
+      depth: box.max.z - box.min.z,
+      min: box.min,
+      max: box.max,
+    };
+  }
+
+  packing() {
+    const blocks = [];
+    const models = this._models.children.sort((model1, model2) => {
+      const bounding1 = this.getBounding(model1.geometry);
+      const bounding2 = this.getBounding(model2.geometry);
+      return bounding2.depth - bounding1.depth;
+    });
+
+    models.forEach((model) => {
+      const bounding = this.getBounding(model.geometry);
+      blocks.push({ w: bounding.width, h: bounding.depth });
+    });
+
+    const { w, h, fill } = potpack(blocks);
+    console.log(`Filling efficiency = ${100 * fill.toFixed(2)}%`);
+
+    const base_square = Math.max(
+      common.workspace.width,
+      common.workspace.depth
+    );
+    const new_square = Math.max(w, h);
+    const scale =
+      base_square >= new_square
+        ? 1
+        : Math.min(base_square, new_square) / Math.max(base_square, new_square);
+
+    const min_x = -common.workspace.width / 2;
+    const min_y = -common.workspace.height / 2;
+    const min_z = -common.workspace.depth / 2;
+
+    models.forEach((model, index) => {
+      const geometry = model.geometry;
+      geometry.scale(scale, scale, scale);
+
+      const block = blocks[index];
+      const bounding = this.getBounding(geometry);
+      const vector = new THREE.Vector3(
+        min_x - bounding.min.x + block.x * scale,
+        min_y - bounding.min.y,
+        min_z - bounding.min.z + block.y * scale
+      );
+      this.move(geometry, vector);
+    });
   }
 }
 
