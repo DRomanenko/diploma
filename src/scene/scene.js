@@ -5,6 +5,8 @@ import { Exporter } from "@/utils/exporter";
 import potpack from "potpack";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+// import { TransformControls } from "three/examples/jsm/controls/TransformControls";
+// import { DragControls } from "three/examples/jsm/controls/DragControls";
 
 class Scene {
   static #createPlaneStencilGroup(geometry, plane, renderOrder) {
@@ -93,7 +95,7 @@ class Scene {
     this._renderer = new THREE.WebGLRenderer({
       // canvas: canvas,
       alpha: true,
-      antialias: true, // false preferred for 'slicing' / true preferred for 'view'
+      // antialias: true, // false preferred for 'slicing' / true preferred for 'view'
       premultipliedAlpha: false,
       preserveDrawingBuffer: true,
     });
@@ -314,6 +316,26 @@ class Scene {
     this._models.add(clippedColorFront);
     this._scene.add(this._models);
     this._scene.add(object);
+
+    /*this._controls = new DragControls(
+      [...this._models.children],
+      this._camera,
+      this._renderer.domElement
+    );
+    this._controls.addEventListener("drag", this.render);*/
+
+    /*this._control = new TransformControls(
+      this._camera,
+      this._renderer.domElement
+    );
+    const group = new THREE.Group();
+    this._models.children.forEach((model) => {
+      group.add(model);
+    });
+    group.add(object);
+    this._control.attach(group);
+
+    this._scene.add(this._control);*/
   }
 
   #prepareGeometry(geometry) {
@@ -403,16 +425,21 @@ class Scene {
 
   async saveImages() {
     const exporter = new Exporter();
+    let min_height = -common.workspace.height / 2;
+    let height = -common.workspace.height;
+    this._models.children.forEach((model) => {
+      height = Math.max(height, this.getBounding(model.geometry).height);
+    });
     const numberSlices = common.slicing.max_number_slice;
-    for (let i = -numberSlices; i <= numberSlices; i++) {
-      common.clippingPlane.constant = (1 / numberSlices) * i;
+    for (let i = 0; i <= numberSlices; i++) {
+      common.clippingPlane.constant = min_height + (height / numberSlices) * i;
       this._clippingPlane.constant = common.clippingPlane.constant;
       this._renderer.render(this._scene, this._camera);
       this._scene.onAfterRender = () => {
         const canvas = document.getElementsByTagName("canvas")[0];
         let image = new Image();
         image.src = canvas.toDataURL();
-        exporter.addImage("slice", image, numberSlices + i);
+        exporter.addImage("slice", image, i);
       };
       if (common.slicing.viewSlice) {
         await sleep(1);
