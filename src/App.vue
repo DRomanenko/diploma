@@ -37,6 +37,7 @@ export default {
 
     this.initGUI();
   },
+
   // TODO 100 добавить vite.common.ts (перейти на vite) tsconfig.json .eslintrc.js
   methods: {
     async saveImages() {
@@ -50,9 +51,8 @@ export default {
     },
 
     initGUI() {
-      gui.root.add(common, "mode", ["view", "slicing"]).onChange((value) => {
-        common.mode = value;
-        scene.update();
+      gui.root.add(common, "mode", ["view", "slicing"]).onChange(() => {
+        scene.updateMode();
       });
       gui.root.add(scene, "packing").name("packing");
       const slicing = gui.root.addFolder("slicing");
@@ -68,6 +68,41 @@ export default {
         .listen()
         .onChange((d) => (scene._clippingPlane.constant = d));
       clippingPlane.open();
+
+      const positioning = gui.root.addFolder("Positioning");
+      positioning
+        .add(
+          common.selected,
+          "modelUUID",
+          [null].concat(scene._models.children.map((value) => value.uuid))
+        )
+        .onChange(() => {
+          scene.selectModel();
+        });
+      positioning
+        .add(common.selected, "x")
+        .min(-1)
+        .max(1)
+        .listen()
+        .onChange(() => {
+          scene.updatePosition();
+        });
+      positioning
+        .add(common.selected, "y")
+        .min(-1)
+        .max(1)
+        .listen()
+        .onChange(() => {
+          scene.updatePosition();
+        });
+      positioning
+        .add(common.selected, "z")
+        .min(-1)
+        .max(1)
+        .listen()
+        .onChange(() => {
+          scene.updatePosition();
+        });
     },
   },
 };

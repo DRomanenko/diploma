@@ -33,6 +33,13 @@ const common = {
     color: 0xffc107,
     clippingColour: "white",
   },
+  selected: {
+    modelUUID: null,
+    x: 0,
+    y: 0,
+    z: 0,
+    color: 0x03fcb1,
+  },
 };
 
 export { common };

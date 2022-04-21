@@ -5,8 +5,6 @@ import { Exporter } from "@/utils/exporter";
 import potpack from "potpack";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-// import { TransformControls } from "three/examples/jsm/controls/TransformControls";
-// import { DragControls } from "three/examples/jsm/controls/DragControls";
 
 class Scene {
   static #createPlaneStencilGroup(geometry, plane, renderOrder) {
@@ -71,6 +69,9 @@ class Scene {
     this.#initClippingView();
     this.#initCamera();
 
+    // this._pointer = new THREE.Vector2();
+    // this._raycaster = new THREE.Raycaster();
+
     this._needRender = true;
 
     window.addEventListener("resize", () => {
@@ -88,6 +89,9 @@ class Scene {
     document.addEventListener("keydown", () => {
       this.resumeRender();
     });
+    /*document.addEventListener("click", (event) => {
+      this.onClick(event);
+    });*/
     requestAnimationFrame(() => this.render());
   }
 
@@ -95,7 +99,7 @@ class Scene {
     this._renderer = new THREE.WebGLRenderer({
       // canvas: canvas,
       alpha: true,
-      // antialias: true, // false preferred for 'slicing' / true preferred for 'view'
+      antialias: true, // false preferred for 'slicing' / true preferred for 'view'
       premultipliedAlpha: false,
       preserveDrawingBuffer: true,
     });
@@ -309,33 +313,13 @@ class Scene {
       clippingPlanes: planes,
       clipIntersection: false,
 
-      color: 0xffc107,
+      color: common.model.color,
     });
     const clippedColorFront = new THREE.Mesh(geometry, material);
     clippedColorFront.renderOrder = 6;
     this._models.add(clippedColorFront);
     this._scene.add(this._models);
     this._scene.add(object);
-
-    /*this._controls = new DragControls(
-      [...this._models.children],
-      this._camera,
-      this._renderer.domElement
-    );
-    this._controls.addEventListener("drag", this.render);*/
-
-    /*this._control = new TransformControls(
-      this._camera,
-      this._renderer.domElement
-    );
-    const group = new THREE.Group();
-    this._models.children.forEach((model) => {
-      group.add(model);
-    });
-    group.add(object);
-    this._control.attach(group);
-
-    this._scene.add(this._control);*/
   }
 
   #prepareGeometry(geometry) {
@@ -419,8 +403,54 @@ class Scene {
     }, 10000);
   }
 
-  update() {
+  updateMode() {
     this.#initCamera();
+  }
+
+  selectModel() {
+    this._models.children.forEach((model) => {
+      model.material.color.setHex(common.model.color);
+      model.material.needsUpdate = true;
+    });
+    if (null !== common.selected.modelUUID) {
+      const model = this._models.children.find(
+        (value) => common.selected.modelUUID === value.uuid
+      );
+      model.material.color.setHex(common.selected.color);
+      model.material.needsUpdate = true;
+
+      let center = new THREE.Vector3();
+      this.getBounding(model.geometry).box.getCenter(center);
+      common.selected.x = center.x;
+      common.selected.y = center.y;
+      common.selected.z = center.z;
+    }
+  }
+
+  updatePosition() {
+    if (null !== common.selected.modelUUID) {
+      const model = this._models.children.find(
+        (value) => common.selected.modelUUID === value.uuid
+      );
+      const geometry = model.geometry;
+
+      let center = new THREE.Vector3();
+      this.getBounding(geometry).box.getCenter(center);
+
+      this.move(
+        geometry,
+        new THREE.Vector3(
+          common.selected.x - center.x,
+          common.selected.y - center.y,
+          common.selected.z - center.z
+        )
+      );
+
+      this._needRender = true;
+      geometry.attributes.position.needsUpdate = true;
+      this._camera.updateProjectionMatrix();
+      requestAnimationFrame(() => this.render());
+    }
   }
 
   async saveImages() {
@@ -461,9 +491,7 @@ class Scene {
   }
 
   getBounding(geometry) {
-    if (null === geometry.boundingBox) {
-      geometry.computeBoundingBox();
-    }
+    geometry.computeBoundingBox();
     const box = geometry.boundingBox;
     return {
       box: box,
@@ -477,14 +505,14 @@ class Scene {
 
   packing() {
     const blocks = [];
-    const models = this._models.children.sort((model1, model2) => {
-      const bounding1 = this.getBounding(model1.geometry);
-      const bounding2 = this.getBounding(model2.geometry);
+    const geometries = this._modelsGeometry.sort((geometry1, geometry2) => {
+      const bounding1 = this.getBounding(geometry1);
+      const bounding2 = this.getBounding(geometry2);
       return bounding2.depth - bounding1.depth;
     });
 
-    models.forEach((model) => {
-      const bounding = this.getBounding(model.geometry);
+    geometries.forEach((geometry) => {
+      const bounding = this.getBounding(geometry);
       blocks.push({ w: bounding.width, h: bounding.depth });
     });
 
@@ -505,8 +533,7 @@ class Scene {
     const min_y = -common.workspace.height / 2;
     const min_z = -common.workspace.depth / 2;
 
-    models.forEach((model, index) => {
-      const geometry = model.geometry;
+    geometries.forEach((geometry, index) => {
       geometry.scale(scale, scale, scale);
 
       const block = blocks[index];
@@ -517,8 +544,91 @@ class Scene {
         min_z - bounding.min.z + block.y * scale
       );
       this.move(geometry, vector);
+      geometry.attributes.position.needsUpdate = true;
     });
+
+    if (null !== common.selected.modelUUID) {
+      const model = this._models.children.find(
+        (value) => common.selected.modelUUID === value.uuid
+      );
+      let center = new THREE.Vector3();
+      this.getBounding(model.geometry).box.getCenter(center);
+      common.selected.x = center.x;
+      common.selected.y = center.y;
+      common.selected.z = center.z;
+    }
   }
+
+  /*onClick(event) {
+    event.preventDefault();
+
+    const canvas = this._renderer.domElement;
+
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+
+    this._pointer.x = (event.clientX / width) * 2 - 1;
+    this._pointer.y = -(event.clientY / height) * 2 + 1;
+    console.log(this._pointer.x, this._pointer.y);
+
+    this._raycaster.setFromCamera(this._pointer, this._camera);
+
+    /!*const intersections = this._raycaster
+      .intersectObjects(this._scene.children, true)
+      .filter(
+        (value) =>
+          "PlaneHelper" !== value.object.type &&
+          "PlaneGeometry" !== value.object.geometry.type
+        // &&
+        // "PlaneHelper" !== value.object.parent.type
+      );*!/
+
+    const intersections1 = this._raycaster.intersectObjects(
+      this._models.children,
+      true
+    );
+
+    const intersections2 = this._raycaster.intersectObjects(
+      this._objects.children,
+      true
+    );
+    console.log(intersections1);
+    console.log(intersections2);
+
+    /!*if (enableSelection === true) {
+      const draggableObjects = controls.getObjects();
+      draggableObjects.length = 0;
+
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+
+      const intersections = raycaster.intersectObjects(objects, true);
+
+      if (intersections.length > 0) {
+        const object = intersections[0].object;
+
+        if (group.children.includes(object) === true) {
+          object.material.emissive.set(0x000000);
+          scene.attach(object);
+        } else {
+          object.material.emissive.set(0xaaaaaa);
+          group.attach(object);
+        }
+
+        controls.transformGroup = true;
+        draggableObjects.push(group);
+      }
+
+      if (group.children.length === 0) {
+        controls.transformGroup = false;
+        draggableObjects.push(...objects);
+      }
+    }*!/
+
+    // this.render();
+  }*/
 }
 
 export { Scene };
