@@ -10,6 +10,13 @@ class GeometryLoader {
     geometry.computeBoundingBox();
     return geometry;
   }
+
+  async parseFile(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    const geometry = this._loader.parse(arrayBuffer);
+    geometry.computeBoundingBox();
+    return geometry;
+  }
 }
 
 export { GeometryLoader };

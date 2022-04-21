@@ -13,6 +13,15 @@ import { GeometryLoader } from "@/utils/loader";
 let scene;
 
 const gui = new Gui();
+let slicing = null;
+let clippingPlane = null;
+let model = null;
+let positioning = null;
+
+const folders = {
+  model: "model",
+};
+
 const loader = new GeometryLoader();
 
 export default {
@@ -24,22 +33,35 @@ export default {
   },
   mounted: async function () {
     const canvas = document.querySelector("#app");
-    const geometry1 = await loader.load(
+    scene = new Scene(canvas);
+
+    /*const geometry1 = await loader.load(
       "models/Model_44_S3.540.45_T3.8.46_E4.3.47_R5.7.stl"
     );
-    scene = new Scene(canvas);
-    scene.addGeometry(geometry1);
     const geometry2 = await loader.load("models/default.stl");
+    scene.addGeometry(geometry1);
     scene.addGeometry(geometry2);
     scene.addGeometry(geometry1);
     scene.addGeometry(geometry2);
-    scene.addGeometry(geometry2);
+    scene.addGeometry(geometry2);*/
 
     this.initGUI();
   },
 
   // TODO 100 добавить vite.common.ts (перейти на vite) tsconfig.json .eslintrc.js
   methods: {
+    async uploadSTL() {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        const geometry = await loader.parseFile(file);
+        scene.addGeometry(geometry);
+        this.initGUImodel();
+      };
+      input.click();
+    },
+
     async saveImages() {
       if (common.mode === "slicing") {
         gui.disableAll(true);
@@ -55,22 +77,28 @@ export default {
         scene.updateMode();
       });
       gui.root.add(scene, "packing").name("packing");
-      const slicing = gui.root.addFolder("slicing");
+
+      slicing = gui.root.addFolder("slicing");
+      clippingPlane = gui.root.addFolder("clippingPlane");
+
       slicing.add(common.slicing, "viewSlice");
       slicing.add(this, "saveImages").name("export");
-      slicing.open();
 
-      const clippingPlane = gui.root.addFolder("ClippingPlane");
       clippingPlane
-        .add(common.clippingPlane, "constant")
-        .min(-1)
-        .max(1)
+        .add(common.clippingPlane, "constant", -1, 1)
         .listen()
         .onChange((d) => (scene._clippingPlane.constant = d));
-      clippingPlane.open();
+      this.initGUImodel();
+    },
 
-      const positioning = gui.root.addFolder("Positioning");
-      positioning
+    initGUImodel() {
+      if (null !== model) {
+        gui.root.folders
+          .find((folder) => folders.model === folder._title)
+          .destroy();
+      }
+      model = gui.root.addFolder(folders.model);
+      model
         .add(
           common.selected,
           "modelUUID",
@@ -79,30 +107,32 @@ export default {
         .onChange(() => {
           scene.selectModel();
         });
+      this.initGUIpositioning();
+      model.add(this, "uploadSTL");
+    },
+
+    initGUIpositioning() {
+      positioning = model.addFolder("positioning");
+
       positioning
-        .add(common.selected, "x")
-        .min(-1)
-        .max(1)
+        .add(common.selected, "x", -1, 1)
         .listen()
         .onChange(() => {
           scene.updatePosition();
         });
       positioning
-        .add(common.selected, "y")
-        .min(-1)
-        .max(1)
+        .add(common.selected, "y", -1, 1)
         .listen()
         .onChange(() => {
           scene.updatePosition();
         });
       positioning
-        .add(common.selected, "z")
-        .min(-1)
-        .max(1)
+        .add(common.selected, "z", -1, 1)
         .listen()
         .onChange(() => {
           scene.updatePosition();
         });
+      positioning.close();
     },
   },
 };
