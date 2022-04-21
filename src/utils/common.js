@@ -35,6 +35,7 @@ const common = {
   },
   selected: {
     modelUUID: null,
+    scale: 1,
     x: 0,
     y: 0,
     z: 0,

@@ -420,10 +420,14 @@ class Scene {
       model.material.needsUpdate = true;
 
       let center = new THREE.Vector3();
-      this.getBounding(model.geometry).box.getCenter(center);
+      const bounding = this.getBounding(model.geometry);
+
+      bounding.box.getCenter(center);
       common.selected.x = center.x;
       common.selected.y = center.y;
       common.selected.z = center.z;
+
+      common.selected.scale = bounding.height / common.workspace.height;
     }
   }
 
@@ -446,6 +450,41 @@ class Scene {
         )
       );
 
+      this._needRender = true;
+      geometry.attributes.position.needsUpdate = true;
+      this._camera.updateProjectionMatrix();
+      requestAnimationFrame(() => this.render());
+    }
+  }
+
+  updateScale() {
+    if (null !== common.selected.modelUUID) {
+      const model = this._models.children.find(
+        (value) => common.selected.modelUUID === value.uuid
+      );
+      const geometry = model.geometry;
+
+      const bounding = this.getBounding(model.geometry);
+
+      const base_square = Math.max(
+        common.workspace.width,
+        common.workspace.height,
+        common.workspace.depth
+      );
+      const new_square = Math.max(
+        bounding.width,
+        bounding.height,
+        bounding.depth
+      );
+      const scale = base_square / new_square;
+
+      geometry.scale(scale, scale, scale);
+
+      geometry.scale(
+        common.selected.scale,
+        common.selected.scale,
+        common.selected.scale
+      );
       this._needRender = true;
       geometry.attributes.position.needsUpdate = true;
       this._camera.updateProjectionMatrix();
@@ -552,10 +591,14 @@ class Scene {
         (value) => common.selected.modelUUID === value.uuid
       );
       let center = new THREE.Vector3();
-      this.getBounding(model.geometry).box.getCenter(center);
+      const bounding = this.getBounding(model.geometry);
+
+      bounding.box.getCenter(center);
       common.selected.x = center.x;
       common.selected.y = center.y;
       common.selected.z = center.z;
+
+      common.selected.scale = bounding.height / common.workspace.height;
     }
   }
 

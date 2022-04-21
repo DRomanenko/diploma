@@ -17,6 +17,7 @@ let slicing = null;
 let clippingPlane = null;
 let model = null;
 let positioning = null;
+let scale = null;
 
 const folders = {
   model: "model",
@@ -35,7 +36,7 @@ export default {
     const canvas = document.querySelector("#app");
     scene = new Scene(canvas);
 
-    /*const geometry1 = await loader.load(
+    const geometry1 = await loader.load(
       "models/Model_44_S3.540.45_T3.8.46_E4.3.47_R5.7.stl"
     );
     const geometry2 = await loader.load("models/default.stl");
@@ -43,7 +44,7 @@ export default {
     scene.addGeometry(geometry2);
     scene.addGeometry(geometry1);
     scene.addGeometry(geometry2);
-    scene.addGeometry(geometry2);*/
+    scene.addGeometry(geometry2);
 
     this.initGUI();
   },
@@ -107,6 +108,7 @@ export default {
         .onChange(() => {
           scene.selectModel();
         });
+      this.initGUIScale();
       this.initGUIpositioning();
       model.add(this, "uploadSTL");
     },
@@ -133,6 +135,17 @@ export default {
           scene.updatePosition();
         });
       positioning.close();
+    },
+
+    initGUIScale() {
+      scale = model.addFolder("scale");
+      scale
+        .add(common.selected, "scale", 0.01, 1)
+        .listen()
+        .onFinishChange(() => {
+          scene.updateScale();
+        });
+      scale.close();
     },
   },
 };
