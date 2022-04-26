@@ -1,7 +1,5 @@
 <template>
-  <el-container>
-    <div id="app"></div>
-  </el-container>
+  <div id="app"></div>
 </template>
 
 <script>
@@ -27,29 +25,24 @@ const loader = new GeometryLoader();
 
 export default {
   name: "App",
-  data() {
-    return {
-      dialogVisible: false,
-    };
-  },
   mounted: async function () {
     const canvas = document.querySelector("#app");
     scene = new Scene(canvas);
 
-    const geometry1 = await loader.load(
-      "models/Model_44_S3.540.45_T3.8.46_E4.3.47_R5.7.stl"
-    );
-    const geometry2 = await loader.load("models/default.stl");
-    scene.addGeometry(geometry1);
-    scene.addGeometry(geometry2);
-    scene.addGeometry(geometry1);
-    scene.addGeometry(geometry2);
-    scene.addGeometry(geometry2);
+    // const geometry1 = await loader.load(
+    //   "models/Model_44_S3.540.45_T3.8.46_E4.3.47_R5.7.stl"
+    // );
+    // const geometry2 = await loader.load("models/default.stl");
+    // scene.addGeometry(geometry1);
+    // scene.addGeometry(geometry2);
+    // scene.addGeometry(geometry1);
+    // scene.addGeometry(geometry2);
+    // scene.addGeometry(geometry2);
 
     this.initGUI();
   },
 
-  // TODO 100 добавить vite.common.ts (перейти на vite) tsconfig.json .eslintrc.js
+  // TODO 100 switch to vite: vite.common.ts, tsconfig.json, .eslintrc.js
   methods: {
     async uploadSTL() {
       const input = document.createElement("input");
