@@ -75,6 +75,7 @@ export default {
       clippingPlane = gui.root.addFolder("clippingPlane");
 
       slicing.add(common.slicing, "viewSlice");
+      slicing.add(common.slicing, "step", 0.001, 0.1).listen();
       slicing.add(this, "saveImages").name("export");
 
       clippingPlane
