@@ -135,7 +135,7 @@ class Scene {
         const far = common.defaultMapSize;
 
         this._camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-        this._camera.position.set(0, 0, 10);
+        this._camera.position.set(0, 0, 5);
         this._models.visible = true;
         this._workspaceView.visible = true;
         this._clippingPlaneView.visible = true;

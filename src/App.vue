@@ -42,7 +42,6 @@ export default {
     this.initGUI();
   },
 
-  // TODO 100 switch to vite: vite.common.ts, tsconfig.json, .eslintrc.js
   methods: {
     async uploadSTL() {
       const input = document.createElement("input");
