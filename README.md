@@ -1,4 +1,4 @@
-# Diploma
+# Thesis
 
 ## Project setup
 ```

@@ -28,17 +28,6 @@ export default {
   mounted: async function () {
     const canvas = document.querySelector("#app");
     scene = new Scene(canvas);
-
-    // const geometry1 = await loader.load(
-    //   "models/Model_44_S3.540.45_T3.8.46_E4.3.47_R5.7.stl"
-    // );
-    // const geometry2 = await loader.load("models/default.stl");
-    // scene.addGeometry(geometry1);
-    // scene.addGeometry(geometry2);
-    // scene.addGeometry(geometry1);
-    // scene.addGeometry(geometry2);
-    // scene.addGeometry(geometry2);
-
     this.initGUI();
   },
 
