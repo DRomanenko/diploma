@@ -3,32 +3,21 @@
 </template>
 
 <script>
-import { Gui } from "@/utils/gui";
+import { MyGUI } from "@/utils/my-gui";
 import { Scene } from "@/scene/scene";
 import { common } from "@/utils/common";
 import { GeometryLoader } from "@/utils/loader";
 
-let scene;
-
-const gui = new Gui();
-let slicing = null;
-let clippingPlane = null;
-let model = null;
-let positioning = null;
-let scale = null;
-
-const folders = {
-  model: "model",
-};
-
 const loader = new GeometryLoader();
+let scene;
+let gui;
 
 export default {
   name: "App",
   mounted: async function () {
     const canvas = document.querySelector("#app");
     scene = new Scene(canvas);
-    this.initGUI();
+    gui = new MyGUI(this, scene);
   },
 
   methods: {
@@ -39,7 +28,7 @@ export default {
         const file = e.target.files[0];
         const geometry = await loader.parseFile(file);
         scene.addGeometry(geometry);
-        this.initGUImodel();
+        gui.updateFolder(gui.root, "model", gui.initFolderModel);
       };
       input.click();
     },
@@ -52,82 +41,6 @@ export default {
       } else {
         alert("Export is only available in 'slicing' mode");
       }
-    },
-
-    initGUI() {
-      gui.root.add(common, "mode", ["view", "slicing"]).onChange(() => {
-        scene.updateMode();
-      });
-      gui.root.add(scene, "packing").name("packing");
-
-      slicing = gui.root.addFolder("slicing");
-      clippingPlane = gui.root.addFolder("clippingPlane");
-
-      slicing.add(common.slicing, "viewSlice");
-      slicing.add(common.slicing, "step", 0.001, 0.1).listen();
-      slicing.add(this, "saveImages").name("export");
-
-      clippingPlane
-        .add(common.clippingPlane, "constant", -1, 1)
-        .listen()
-        .onChange((d) => (scene._clippingPlane.constant = d));
-      this.initGUImodel();
-    },
-
-    initGUImodel() {
-      if (null !== model) {
-        gui.root.folders
-          .find((folder) => folders.model === folder._title)
-          .destroy();
-      }
-      model = gui.root.addFolder(folders.model);
-      model
-        .add(
-          common.selected,
-          "modelUUID",
-          [null].concat(scene._models.children.map((value) => value.uuid))
-        )
-        .onChange(() => {
-          scene.selectModel();
-        });
-      this.initGUIScale();
-      this.initGUIpositioning();
-      model.add(this, "uploadSTL");
-    },
-
-    initGUIpositioning() {
-      positioning = model.addFolder("positioning");
-
-      positioning
-        .add(common.selected, "x", -1, 1)
-        .listen()
-        .onChange(() => {
-          scene.updatePosition();
-        });
-      positioning
-        .add(common.selected, "y", -1, 1)
-        .listen()
-        .onChange(() => {
-          scene.updatePosition();
-        });
-      positioning
-        .add(common.selected, "z", -1, 1)
-        .listen()
-        .onChange(() => {
-          scene.updatePosition();
-        });
-      positioning.close();
-    },
-
-    initGUIScale() {
-      scale = model.addFolder("scale");
-      scale
-        .add(common.selected, "scale", 0.01, 1)
-        .listen()
-        .onFinishChange(() => {
-          scene.updateScale();
-        });
-      scale.close();
     },
   },
 };
