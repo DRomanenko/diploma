@@ -65,8 +65,10 @@ class MyGUI {
 
   initFolderScale(folder) {
     folder
-      .add(common.selected, "scale", 0.01, 1)
+      .add(common.selected, "scale")
       .name("scale")
+      .min(0.01)
+      .max(1)
       .listen()
       .onFinishChange(() => {
         this._scene.updateScale();
@@ -76,22 +78,28 @@ class MyGUI {
 
   initFolderPositioning(folder) {
     folder
-      .add(common.selected, "x", -1, 1)
+      .add(common.selected, "x")
       .name("x")
       .listen()
+      .min(-1)
+      .max(1)
       .onChange(() => {
         this._scene.updatePosition();
       });
     folder
-      .add(common.selected, "y", -1, 1)
+      .add(common.selected, "y")
       .name("y")
+      .min(-1)
+      .max(1)
       .listen()
       .onChange(() => {
         this._scene.updatePosition();
       });
     folder
-      .add(common.selected, "z", -1, 1)
+      .add(common.selected, "z")
       .name("z")
+      .min(-1)
+      .max(1)
       .listen()
       .onChange(() => {
         this._scene.updatePosition();
