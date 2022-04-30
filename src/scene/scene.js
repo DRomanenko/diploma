@@ -53,7 +53,7 @@ class Scene {
       this._clippingViews = new THREE.Group();
 
       this._modelsGeometry = [];
-      this._models = new THREE.Group();
+      this.models = new THREE.Group();
       this.#init();
     } finally {
       console.log(this._scene);
@@ -136,7 +136,7 @@ class Scene {
 
         this._camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
         this._camera.position.set(0, 0, 5);
-        this._models.visible = true;
+        this.models.visible = true;
         this._workspaceView.visible = true;
         this._clippingPlaneView.visible = true;
         new OrbitControls(this._camera, this._renderer.domElement);
@@ -153,7 +153,7 @@ class Scene {
         this._camera.lookAt(
           new THREE.Vector3(0, common.workspace.height / 2, 0)
         );
-        this._models.visible = false;
+        this.models.visible = false;
         this._workspaceView.visible = false;
         this._clippingPlaneView.visible = false;
         break;
@@ -317,8 +317,8 @@ class Scene {
     });
     const clippedColorFront = new THREE.Mesh(geometry, material);
     clippedColorFront.renderOrder = 6;
-    this._models.add(clippedColorFront);
-    this._scene.add(this._models);
+    this.models.add(clippedColorFront);
+    this._scene.add(this.models);
     this._scene.add(object);
   }
 
@@ -408,12 +408,12 @@ class Scene {
   }
 
   selectModel() {
-    this._models.children.forEach((model) => {
+    this.models.children.forEach((model) => {
       model.material.color.setHex(common.model.color);
       model.material.needsUpdate = true;
     });
     if (null !== common.selected.modelUUID) {
-      const model = this._models.children.find(
+      const model = this.models.children.find(
         (value) => common.selected.modelUUID === value.uuid
       );
       model.material.color.setHex(common.selected.color);
@@ -433,7 +433,7 @@ class Scene {
 
   updatePosition() {
     if (null !== common.selected.modelUUID) {
-      const model = this._models.children.find(
+      const model = this.models.children.find(
         (value) => common.selected.modelUUID === value.uuid
       );
       const geometry = model.geometry;
@@ -459,7 +459,7 @@ class Scene {
 
   updateScale() {
     if (null !== common.selected.modelUUID) {
-      const model = this._models.children.find(
+      const model = this.models.children.find(
         (value) => common.selected.modelUUID === value.uuid
       );
       const geometry = model.geometry;
@@ -496,7 +496,7 @@ class Scene {
     const exporter = new Exporter();
     let min_height = -common.workspace.height / 2;
     let height = min_height;
-    this._models.children.forEach((model) => {
+    this.models.children.forEach((model) => {
       height = Math.max(height, this.getBounding(model.geometry).height);
     });
     const numberSlices = height / common.slicing.step;
@@ -587,7 +587,7 @@ class Scene {
     });
 
     if (null !== common.selected.modelUUID) {
-      const model = this._models.children.find(
+      const model = this.models.children.find(
         (value) => common.selected.modelUUID === value.uuid
       );
       let center = new THREE.Vector3();
@@ -627,7 +627,7 @@ class Scene {
       );*!/
 
     const intersections1 = this._raycaster.intersectObjects(
-      this._models.children,
+      this.models.children,
       true
     );
 

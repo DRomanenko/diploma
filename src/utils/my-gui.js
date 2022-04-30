@@ -52,7 +52,7 @@ class MyGUI {
       .add(
         common.selected,
         "modelUUID",
-        [null].concat(this._scene._models.children.map((value) => value.uuid))
+        [null].concat(this._scene.models.children.map((value) => value.uuid))
       )
       .name("modelUUID")
       .onChange(() => this._scene.selectModel());
