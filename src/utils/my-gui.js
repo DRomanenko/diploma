@@ -55,12 +55,11 @@ class MyGUI {
         [null].concat(this._scene.models.children.map((value) => value.uuid))
       )
       .name("modelUUID")
+      .listen()
       .onChange(() => this._scene.selectModel());
-
     this.updateFolder(folder, "scale", this.initFolderScale);
     this.updateFolder(folder, "positioning", this.initFolderPositioning);
-
-    folder.add(this._component, "uploadSTL").name("uploadSTL");
+    folder.add(this._component, "uploadSTL").name("upload");
   }
 
   initFolderScale(folder) {
@@ -73,7 +72,6 @@ class MyGUI {
       .onFinishChange(() => {
         this._scene.updateScale();
       });
-    folder.close();
   }
 
   initFolderPositioning(folder) {
@@ -104,13 +102,13 @@ class MyGUI {
       .onChange(() => {
         this._scene.updatePosition();
       });
-    folder.close();
   }
 
+  findSubFolderByName = (root, folderName) =>
+    root.folders.find((folder) => folderName === folder._title);
+
   updateFolder(root, folderName, init) {
-    const subFolder = root.folders.find(
-      (folder) => folderName === folder._title
-    );
+    const subFolder = this.findSubFolderByName(root, folderName);
     if (subFolder) {
       subFolder.destroy();
     }

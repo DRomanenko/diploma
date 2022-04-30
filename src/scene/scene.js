@@ -50,6 +50,9 @@ class Scene {
       this._width = canvas.clientWidth;
       this._height = canvas.clientHeight;
 
+      this._pointer = new THREE.Vector2();
+      this._raycaster = new THREE.Raycaster();
+
       this._clippingViews = new THREE.Group();
 
       this._modelsGeometry = [];
@@ -69,9 +72,6 @@ class Scene {
     this.#initClippingView();
     this.#initCamera();
 
-    // this._pointer = new THREE.Vector2();
-    // this._raycaster = new THREE.Raycaster();
-
     this._needRender = true;
 
     window.addEventListener("resize", () => {
@@ -89,9 +89,9 @@ class Scene {
     document.addEventListener("keydown", () => {
       this.resumeRender();
     });
-    /*document.addEventListener("click", (event) => {
+    document.addEventListener("click", (event) => {
       this.onClick(event);
-    });*/
+    });
     requestAnimationFrame(() => this.render());
   }
 
@@ -602,76 +602,24 @@ class Scene {
     }
   }
 
-  /*onClick(event) {
+  onClick(event) {
     event.preventDefault();
 
-    const canvas = this._renderer.domElement;
-
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-
-    this._pointer.x = (event.clientX / width) * 2 - 1;
-    this._pointer.y = -(event.clientY / height) * 2 + 1;
-    console.log(this._pointer.x, this._pointer.y);
+    this._pointer.x = (event.clientX / this._width) * 2 - 1;
+    this._pointer.y = -(event.clientY / this._height) * 2 + 1;
 
     this._raycaster.setFromCamera(this._pointer, this._camera);
 
-    /!*const intersections = this._raycaster
-      .intersectObjects(this._scene.children, true)
-      .filter(
-        (value) =>
-          "PlaneHelper" !== value.object.type &&
-          "PlaneGeometry" !== value.object.geometry.type
-        // &&
-        // "PlaneHelper" !== value.object.parent.type
-      );*!/
-
-    const intersections1 = this._raycaster.intersectObjects(
+    const intersections = this._raycaster.intersectObjects(
       this.models.children,
       true
     );
 
-    const intersections2 = this._raycaster.intersectObjects(
-      this._objects.children,
-      true
-    );
-    console.log(intersections1);
-    console.log(intersections2);
-
-    /!*if (enableSelection === true) {
-      const draggableObjects = controls.getObjects();
-      draggableObjects.length = 0;
-
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-      raycaster.setFromCamera(mouse, camera);
-
-      const intersections = raycaster.intersectObjects(objects, true);
-
-      if (intersections.length > 0) {
-        const object = intersections[0].object;
-
-        if (group.children.includes(object) === true) {
-          object.material.emissive.set(0x000000);
-          scene.attach(object);
-        } else {
-          object.material.emissive.set(0xaaaaaa);
-          group.attach(object);
-        }
-
-        controls.transformGroup = true;
-        draggableObjects.push(group);
-      }
-
-      if (group.children.length === 0) {
-        controls.transformGroup = false;
-        draggableObjects.push(...objects);
-      }
-    }*!/
-
-    // this.render();
-  }*/
+    if (intersections && intersections.length === 1) {
+      common.selected.modelUUID = intersections[0].object.uuid;
+      this.selectModel();
+    }
+  }
 }
 
 export { Scene };
