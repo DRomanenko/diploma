@@ -18,6 +18,7 @@ export default {
     const canvas = document.querySelector("#app");
     scene = new Scene(canvas);
     gui = new MyGUI(this, scene);
+    scene.addGUI(gui);
   },
 
   methods: {
@@ -28,7 +29,7 @@ export default {
         const file = e.target.files[0];
         const geometry = await loader.parseFile(file);
         scene.addGeometry(geometry);
-        gui.updateFolder(gui.root, "model", gui.initFolderModel);
+        scene.packing();
       };
       input.click();
     },

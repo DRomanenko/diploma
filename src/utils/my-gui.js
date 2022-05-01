@@ -15,7 +15,7 @@ class MyGUI {
     this.initFolderRoot();
     this.updateFolder(this.root, "slicing", this.initFolderSlicing);
     this.updateFolder(this.root, "clippingPlane", this.initFolderClippingPlane);
-    this.updateFolder(this.root, "model", this.initFolderModel);
+    this.updateFolderModel();
   }
 
   initFolderRoot() {
@@ -47,6 +47,22 @@ class MyGUI {
       .onChange((d) => (this._scene._clippingPlane.constant = d));
   }
 
+  showContentsFolderModel(folder) {
+    if (common.selected.modelUUID) {
+      this.updateFolder(folder, "scale", this.initFolderScale);
+      this.updateFolder(folder, "positioning", this.initFolderPositioning);
+    } else {
+      const scale = this.findSubFolderByName(folder, "scale");
+      const positioning = this.findSubFolderByName(folder, "positioning");
+      if (scale) {
+        scale.destroy();
+      }
+      if (positioning) {
+        positioning.destroy();
+      }
+    }
+  }
+
   initFolderModel(folder) {
     folder
       .add(
@@ -56,11 +72,16 @@ class MyGUI {
       )
       .name("modelUUID")
       .listen()
-      .onChange(() => this._scene.selectModel());
-    this.updateFolder(folder, "scale", this.initFolderScale);
-    this.updateFolder(folder, "positioning", this.initFolderPositioning);
+      .onChange(() => {
+        this._scene.selectModel();
+        this.showContentsFolderModel(folder);
+      });
+    this.showContentsFolderModel(folder);
     folder.add(this._component, "uploadSTL").name("upload");
   }
+
+  updateFolderModel = () =>
+    this.updateFolder(this.root, "model", this.initFolderModel);
 
   initFolderScale(folder) {
     folder

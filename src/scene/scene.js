@@ -354,6 +354,8 @@ class Scene {
     this.models.add(clippedColorFront);
     this._scene.add(this.models);
     this._scene.add(object);
+
+    this._gui.updateFolderModel();
   }
 
   #prepareGeometry(geometry) {
@@ -463,6 +465,7 @@ class Scene {
 
       common.selected.scale = bounding.height / common.workspace.height;
     }
+    this._gui.updateFolderModel();
   }
 
   updatePosition() {
@@ -653,6 +656,10 @@ class Scene {
       common.selected.modelUUID = intersections[0].object.uuid;
       this.selectModel();
     }
+  }
+
+  addGUI(gui) {
+    this._gui = gui;
   }
 }
 
