@@ -74,7 +74,6 @@ class MyGUI {
       .listen()
       .onChange(() => {
         this._scene.selectModel();
-        this.showContentsFolderModel(folder);
       });
     this.showContentsFolderModel(folder);
     folder.add(this._component, "uploadSTL").name("upload");
