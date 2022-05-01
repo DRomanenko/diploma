@@ -92,6 +92,40 @@ class Scene {
     document.addEventListener("click", (event) => {
       this.onClick(event);
     });
+    let ctrlActive = false;
+
+    document.body.addEventListener("keyup", (event) => {
+      if (event.key === "Control") ctrlActive = false;
+    });
+
+    document.body.addEventListener("keydown", (event) => {
+      if (event.key === "Control") ctrlActive = true;
+      if (ctrlActive === true && event.code === "KeyC") {
+        // this disables the browsers default copy functionality
+        event.preventDefault();
+
+        if (common.selected.modelUUID) {
+          const model = this.models.children.find(
+            (value) => common.selected.modelUUID === value.uuid
+          );
+          common.copy.geometry = model.geometry;
+        } else {
+          alert("Select a model");
+        }
+      }
+
+      if (ctrlActive === true && event.code === "KeyV") {
+        // this disables the browsers default paste functionality
+        event.preventDefault();
+
+        if (common.copy.geometry) {
+          this.addGeometry(common.copy.geometry);
+          this.packing();
+        } else {
+          alert("Select and copy a model");
+        }
+      }
+    });
     requestAnimationFrame(() => this.render());
   }
 

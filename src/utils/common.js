@@ -41,6 +41,9 @@ const common = {
     z: 0,
     color: 0x03fcb1,
   },
+  copy: {
+    geometry: null,
+  },
 };
 
 export { common };
