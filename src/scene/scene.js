@@ -1,10 +1,11 @@
 import { common } from "@/utils/common";
-import { sleep } from "@/utils/utils";
+import { sleep, getBounding } from "@/utils/utils";
 import { Exporter } from "@/utils/exporter";
 
 import potpack from "potpack";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { PositionTool } from "@/utils/position-tool";
 
 class Scene {
   static #createPlaneStencilGroup(geometry, plane, renderOrder) {
@@ -56,6 +57,8 @@ class Scene {
 
       this._modelsGeometry = [];
       this.models = new THREE.Group();
+
+      this._positionTool = new PositionTool();
       this.#init();
     } finally {
       console.log(this._scene);
@@ -71,6 +74,7 @@ class Scene {
     this.#initClippingPlane();
     this.#initClippingView();
     this.#initCamera();
+    this._initControl();
 
     this._needRender = true;
 
@@ -94,6 +98,13 @@ class Scene {
     document.addEventListener("click", (event) => {
       this.getIntersectedObject(event);
     });
+
+    if (common.selected.graphicalPositioning) {
+      document.addEventListener("mousemove", (event) => {
+        this.onMouseMove(event);
+      });
+    }
+
     let ctrlActive = false;
 
     document.body.addEventListener("keyup", (event) => {
@@ -173,7 +184,10 @@ class Scene {
         this.models.visible = true;
         this._workspaceView.visible = true;
         this._clippingPlaneView.visible = true;
-        new OrbitControls(this._camera, this._renderer.domElement);
+        this._orbitControls = new OrbitControls(
+          this._camera,
+          this._renderer.domElement
+        );
         break;
       }
       case "slicing": {
@@ -190,6 +204,7 @@ class Scene {
         this.models.visible = false;
         this._workspaceView.visible = false;
         this._clippingPlaneView.visible = false;
+        this._positionTool.hide();
         break;
       }
     }
@@ -283,6 +298,9 @@ class Scene {
       common.workspace.depth
     );
 
+    this.move(floorGeometry, new THREE.Vector3(0, 0, -1));
+    floorGeometry.lookAt(new THREE.Vector3(0, 1, 0));
+
     const floorMaterial = new THREE.MeshBasicMaterial({
       color: "lightgray",
       side: THREE.DoubleSide,
@@ -290,10 +308,8 @@ class Scene {
       transparent: true,
       depthWrite: false,
     });
-    this.move(floorGeometry, new THREE.Vector3(0, 0, -1));
 
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.lookAt(0, 1, 0);
 
     this._workspaceView = new THREE.Group();
     this._workspaceView.add(wireframe);
@@ -364,6 +380,10 @@ class Scene {
     }
   }
 
+  _initControl() {
+    this._scene.add(this._positionTool.control);
+  }
+
   addGeometry(new_geometry) {
     const geometry = this.#prepareGeometry(new_geometry.clone());
     this._modelsGeometry.push(geometry);
@@ -396,7 +416,7 @@ class Scene {
   }
 
   #prepareGeometry(geometry) {
-    let bounding = this.getBounding(geometry);
+    let bounding = getBounding(geometry);
 
     let size = new THREE.Vector3(0, 0, 0);
     size = bounding.box.getSize(size);
@@ -408,6 +428,18 @@ class Scene {
     this.move(geometry, new THREE.Vector3(0, min_y - bounding.min.y, 0));
 
     return geometry;
+  }
+
+  onMouseMove(event) {
+    event.preventDefault();
+    this._pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+    this._pointer.x = -(event.clientY / window.innerHeight) * 2 + 1;
+  }
+
+  getIntersects(searchObjects, recursive) {
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(this._pointer, this._camera);
+    return raycaster.intersectObjects(searchObjects, recursive);
   }
 
   render() {
@@ -434,6 +466,24 @@ class Scene {
       const canvas = this._renderer.domElement;
       this._camera.aspect = canvas.clientWidth / canvas.clientHeight;
       this._camera.updateProjectionMatrix();
+    }
+
+    if (common.selected.graphicalPositioning) {
+      const intersects = this.getIntersects(
+        this._positionTool.control.children,
+        true
+      );
+
+      if (intersects.length > 0) {
+        const object3d = intersects[0].object;
+        if (this.checkVisible(object3d)) {
+          this._orbitControls.enabled = !this._positionTool.selectControl(
+            object3d.uuid
+          );
+        }
+      } else {
+        this._orbitControls.enabled = !this._positionTool.selectControl(null);
+      }
     }
 
     this._renderer.render(this._scene, this._camera);
@@ -497,7 +547,7 @@ class Scene {
       model.material.needsUpdate = true;
 
       let center = new THREE.Vector3();
-      const bounding = this.getBounding(model.geometry);
+      const bounding = getBounding(model.geometry);
 
       bounding.box.getCenter(center);
       common.selected.x = center.x;
@@ -505,6 +555,14 @@ class Scene {
       common.selected.z = center.z;
 
       common.selected.scale = bounding.height / common.workspace.height;
+
+      if (common.selected.graphicalPositioning) {
+        this._positionTool.selectGeometry(model.geometry);
+      }
+    } else {
+      if (common.selected.graphicalPositioning) {
+        this._positionTool.selectGeometry(null);
+      }
     }
     this._gui.updateFolderModel();
   }
@@ -517,7 +575,7 @@ class Scene {
       const geometry = model.geometry;
 
       let center = new THREE.Vector3();
-      this.getBounding(geometry).box.getCenter(center);
+      getBounding(geometry).box.getCenter(center);
 
       this.move(
         geometry,
@@ -542,7 +600,7 @@ class Scene {
       );
       const geometry = model.geometry;
 
-      const bounding = this.getBounding(model.geometry);
+      const bounding = getBounding(model.geometry);
 
       const base_square = Math.max(
         common.workspace.width,
@@ -575,7 +633,7 @@ class Scene {
     let min_height = -common.workspace.height / 2;
     let height = min_height;
     this.models.children.forEach((model) => {
-      height = Math.max(height, this.getBounding(model.geometry).height);
+      height = Math.max(height, getBounding(model.geometry).height);
     });
     const numberSlices = height / common.slicing.step;
 
@@ -614,29 +672,16 @@ class Scene {
     }
   }
 
-  getBounding(geometry) {
-    geometry.computeBoundingBox();
-    const box = geometry.boundingBox;
-    return {
-      box: box,
-      width: box.max.x - box.min.x,
-      height: box.max.y - box.min.y,
-      depth: box.max.z - box.min.z,
-      min: box.min,
-      max: box.max,
-    };
-  }
-
   packing() {
     const blocks = [];
     const geometries = this._modelsGeometry.sort((geometry1, geometry2) => {
-      const bounding1 = this.getBounding(geometry1);
-      const bounding2 = this.getBounding(geometry2);
+      const bounding1 = getBounding(geometry1);
+      const bounding2 = getBounding(geometry2);
       return bounding2.depth - bounding1.depth;
     });
 
     geometries.forEach((geometry) => {
-      const bounding = this.getBounding(geometry);
+      const bounding = getBounding(geometry);
       blocks.push({ w: bounding.width, h: bounding.depth });
     });
 
@@ -661,7 +706,7 @@ class Scene {
       geometry.scale(scale, scale, scale);
 
       const block = blocks[index];
-      const bounding = this.getBounding(geometry);
+      const bounding = getBounding(geometry);
       const vector = new THREE.Vector3(
         min_x - bounding.min.x + block.x * scale,
         min_y - bounding.min.y,
@@ -676,7 +721,7 @@ class Scene {
         (value) => common.selected.modelUUID === value.uuid
       );
       let center = new THREE.Vector3();
-      const bounding = this.getBounding(model.geometry);
+      const bounding = getBounding(model.geometry);
 
       bounding.box.getCenter(center);
       common.selected.x = center.x;

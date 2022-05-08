@@ -40,6 +40,7 @@ const common = {
     clippingColour: "white",
   },
   selected: {
+    graphicalPositioning: false,
     modelUUID: null,
     scale: 1,
     x: 0,

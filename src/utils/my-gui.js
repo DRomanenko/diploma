@@ -106,6 +106,9 @@ class MyGUI {
 
   initFolderPositioning(folder) {
     folder
+      .add(common.selected, "graphicalPositioning")
+      .name("graphicalPositioning");
+    folder
       .add(common.selected, "x")
       .name("x")
       .listen()
