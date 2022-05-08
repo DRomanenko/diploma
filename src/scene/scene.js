@@ -293,27 +293,76 @@ class Scene {
       new THREE.LineBasicMaterial({ color: "lightgray", linewidth: 2 })
     );
 
-    let floorGeometry = new THREE.PlaneGeometry(
+    const sideX = new THREE.PlaneGeometry(
+      common.workspace.height,
+      common.workspace.depth
+    );
+    const sideXNegate = sideX.clone();
+
+    const sideY = new THREE.PlaneGeometry(
       common.workspace.width,
       common.workspace.depth
     );
+    const sideYNegate = sideY.clone();
 
-    this.move(floorGeometry, new THREE.Vector3(0, 0, -1));
-    floorGeometry.lookAt(new THREE.Vector3(0, 1, 0));
+    const sideZ = new THREE.PlaneGeometry(
+      common.workspace.width,
+      common.workspace.height
+    );
+    const sideZNegate = sideZ.clone();
+
+    this.move(sideXNegate, new THREE.Vector3(0, 0, -1));
+    sideXNegate.lookAt(new THREE.Vector3(1, 0, 0));
+
+    this.move(sideX, new THREE.Vector3(0, 0, 1));
+    sideX.lookAt(new THREE.Vector3(1, 0, 0));
+
+    this.move(sideYNegate, new THREE.Vector3(0, 0, -1));
+    sideYNegate.lookAt(new THREE.Vector3(0, 1, 0));
+
+    this.move(sideY, new THREE.Vector3(0, 0, 1));
+    sideY.lookAt(new THREE.Vector3(0, 1, 0));
+
+    this.move(sideZNegate, new THREE.Vector3(0, 0, -1));
+    sideZNegate.lookAt(new THREE.Vector3(0, 0, 1));
+
+    this.move(sideZ, new THREE.Vector3(0, 0, 1));
+    sideZ.lookAt(new THREE.Vector3(0, 0, 1));
 
     const floorMaterial = new THREE.MeshBasicMaterial({
-      color: "lightgray",
-      side: THREE.DoubleSide,
+      color: 0xffe68c,
+      side: THREE.FrontSide,
+      opacity: 0.5,
+      transparent: true,
+      depthWrite: false,
+    });
+
+    const sideMateraial = new THREE.MeshBasicMaterial({
+      color: 0xf4f2d9,
+      side: THREE.BackSide,
       opacity: 0.25,
       transparent: true,
       depthWrite: false,
     });
 
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    const sideNegateMateraial = new THREE.MeshBasicMaterial({
+      color: 0xf4f2d9,
+      side: THREE.FrontSide,
+      opacity: 0.25,
+      transparent: true,
+      depthWrite: false,
+    });
 
     this._workspaceView = new THREE.Group();
     this._workspaceView.add(wireframe);
-    this._workspaceView.add(floor);
+    this._workspaceView.add(new THREE.Mesh(sideX, sideMateraial));
+    this._workspaceView.add(new THREE.Mesh(sideXNegate, sideNegateMateraial));
+
+    this._workspaceView.add(new THREE.Mesh(sideY, sideMateraial));
+    this._workspaceView.add(new THREE.Mesh(sideYNegate, floorMaterial));
+
+    this._workspaceView.add(new THREE.Mesh(sideZ, sideMateraial));
+    this._workspaceView.add(new THREE.Mesh(sideZNegate, sideNegateMateraial));
 
     this._scene.add(this._workspaceView);
   }
