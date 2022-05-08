@@ -1,5 +1,5 @@
 <template>
-  <div id="app"></div>
+  <canvas id="app"></canvas>
 </template>
 
 <script>
@@ -15,7 +15,7 @@ let gui;
 export default {
   name: "App",
   mounted: async function () {
-    const canvas = document.querySelector("#app");
+    const canvas = document.getElementById("app");
     scene = new Scene(canvas);
     gui = new MyGUI(this, scene);
     scene.addGUI(gui);

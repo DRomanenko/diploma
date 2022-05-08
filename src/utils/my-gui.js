@@ -34,7 +34,17 @@ class MyGUI {
       .min(0.001)
       .max(0.1)
       .listen();
+    this.updateFolder(
+      folder,
+      "slicingResolution",
+      this.initFolderSlicingResolution
+    );
     folder.add(this._component, "saveImages").name("export");
+  }
+
+  initFolderSlicingResolution(folder) {
+    folder.add(common.slicing, "widthResolution").name("width");
+    folder.add(common.slicing, "heightResolution").name("height");
   }
 
   initFolderClippingPlane(folder) {
@@ -139,9 +149,16 @@ class MyGUI {
 
   disableAll(disabled) {
     this.disableAllInGUI(this.root, disabled);
-    this.root.folders.forEach((childGUI) => {
-      this.disableAllInGUI(childGUI, disabled);
-    });
+    this.disableAllFolders(this.root, disabled);
+  }
+
+  disableAllFolders(gui, disabled) {
+    if (gui) {
+      gui.folders.forEach((childGUI) => {
+        this.disableAllFolders(childGUI, disabled);
+        this.disableAllInGUI(childGUI, disabled);
+      });
+    }
   }
 
   disableAllInGUI(gui, disabled) {

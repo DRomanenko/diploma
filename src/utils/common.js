@@ -3,10 +3,16 @@ import * as THREE from "three";
 const common = {
   mode: "view",
   slicing: {
-    viewSlice: false,
+    viewSlice: true,
     step: 0.01,
+    widthResolution: 1000,
+    heightResolution: 1000,
   },
-  defaultMapSize: 1024,
+  camera: {
+    fov: 45,
+    near: 0.05,
+    far: 1024,
+  },
   workspace: {
     color: "white",
     width: 2,

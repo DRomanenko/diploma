@@ -51,7 +51,6 @@ class Scene {
       this._height = canvas.clientHeight;
 
       this._pointer = new THREE.Vector2();
-      this._raycaster = new THREE.Raycaster();
 
       this._clippingViews = new THREE.Group();
 
@@ -74,6 +73,8 @@ class Scene {
 
     this._needRender = true;
 
+    this._exporting = false;
+
     window.addEventListener("resize", () => {
       this.resumeRender();
     });
@@ -90,7 +91,7 @@ class Scene {
       this.resumeRender();
     });
     document.addEventListener("click", (event) => {
-      this.onClick(event);
+      this.getIntersectedObject(event);
     });
     let ctrlActive = false;
 
@@ -131,7 +132,7 @@ class Scene {
 
   #initRenderer() {
     this._renderer = new THREE.WebGLRenderer({
-      // canvas: canvas,
+      canvas: this._canvas,
       alpha: true,
       antialias: true, // false preferred for 'slicing' / true preferred for 'view'
       premultipliedAlpha: false,
@@ -142,8 +143,6 @@ class Scene {
 
     this._renderer.localClippingEnabled = true;
     this._renderer.physicallyCorrectLights = true;
-
-    this._canvas.appendChild(this._renderer.domElement);
   }
 
   #initScene() {
@@ -163,10 +162,10 @@ class Scene {
   #initCamera() {
     switch (common.mode) {
       case "view": {
-        const fov = 45;
+        const fov = common.camera.fov;
         const aspect = this._width / this._height;
-        const near = 0.05;
-        const far = common.defaultMapSize;
+        const near = common.camera.near;
+        const far = common.camera.far;
 
         this._camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
         this._camera.position.set(0, 0, 5);
@@ -393,7 +392,7 @@ class Scene {
       );
     }
 
-    if (this.#resizeRendererToDisplaySize(this._renderer)) {
+    if (this.#resizeRendererToDisplaySize()) {
       const canvas = this._renderer.domElement;
       this._camera.aspect = canvas.clientWidth / canvas.clientHeight;
       this._camera.updateProjectionMatrix();
@@ -408,17 +407,21 @@ class Scene {
     this._lastRenderTime = new Date().getTime();
   }
 
-  #resizeRendererToDisplaySize(renderer) {
-    const canvas = renderer.domElement;
+  setSize(width, height) {
+    this._camera.aspect = width / height;
+    this._camera.updateProjectionMatrix();
+    this._renderer.setSize(width, height);
+  }
 
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
+  #resizeRendererToDisplaySize() {
+    const canvas = this._renderer.domElement;
 
-    const needResize = canvas.width !== width || canvas.height !== height;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const needResize =
+      !this._exporting && (canvas.width !== width || canvas.height !== height);
     if (needResize) {
-      renderer.setSize(width, height, false);
-      this._camera.aspect = width / height;
-      this._camera.updateProjectionMatrix();
+      this.setSize(width, height);
     }
     return needResize;
   }
@@ -537,6 +540,12 @@ class Scene {
       height = Math.max(height, this.getBounding(model.geometry).height);
     });
     const numberSlices = height / common.slicing.step;
+
+    this._exporting = true;
+    this.setSize(
+      common.slicing.widthResolution,
+      common.slicing.heightResolution
+    );
     for (let i = 0; i <= numberSlices; i++) {
       common.clippingPlane.constant = min_height + (height / numberSlices) * i;
       this._clippingPlane.constant = common.clippingPlane.constant;
@@ -551,6 +560,7 @@ class Scene {
         await sleep(1);
       }
     }
+    this._exporting = false;
     exporter.saveAsZip("slicing");
     common.clippingPlane.constant = 0;
     this._clippingPlane.constant = 0;
@@ -639,22 +649,29 @@ class Scene {
     }
   }
 
-  onClick(event) {
+  checkVisible(object3d) {
+    if (object3d.parent == null) {
+      return true;
+    }
+    return object3d.visible ? this.checkVisible(object3d.parent) : false;
+  }
+
+  getIntersectedObject(event) {
     event.preventDefault();
 
     this._pointer.x = (event.clientX / this._width) * 2 - 1;
     this._pointer.y = -(event.clientY / this._height) * 2 + 1;
 
-    this._raycaster.setFromCamera(this._pointer, this._camera);
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(this._pointer, this._camera);
+    const intersects = raycaster.intersectObjects(this.models.children, true);
 
-    const intersections = this._raycaster.intersectObjects(
-      this.models.children,
-      true
-    );
-
-    if (intersections && intersections.length === 1) {
-      common.selected.modelUUID = intersections[0].object.uuid;
-      this.selectModel();
+    if (intersects && intersects.length === 1) {
+      const object3d = intersects[0].object;
+      if (this.checkVisible(object3d)) {
+        common.selected.modelUUID = intersects[0].object.uuid;
+        this.selectModel();
+      }
     }
   }
 
