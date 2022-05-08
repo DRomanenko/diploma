@@ -66,7 +66,8 @@ class Scene {
     this.#initRenderer();
     this.#initScene();
     this.#initLight();
-    this.#initWorkspace();
+    this.#initWorkspaceBorders();
+    this.#initWorkspaceView();
     this.#initClippingPlane();
     this.#initClippingView();
     this.#initCamera();
@@ -194,7 +195,7 @@ class Scene {
     }
   }
 
-  #initWorkspace() {
+  #initWorkspaceBorders() {
     this._workspace = [
       // Borders on the x-axis
       new THREE.Plane(new THREE.Vector3(-1, 0, 0), common.workspace.width / 2),
@@ -256,10 +257,47 @@ class Scene {
       ),
     ];
 
-    this._workspaceView = new THREE.Group();
+    this._workspaceBordersView = new THREE.Group();
     workspaceView.forEach((plane) => {
-      this._workspaceView.add(plane);
+      this._workspaceBordersView.add(plane);
     });
+    this._workspaceBordersView.visible = false;
+
+    this._scene.add(this._workspaceBordersView);
+  }
+
+  #initWorkspaceView() {
+    const boxGeometry = new THREE.BoxGeometry(
+      common.workspace.width,
+      common.workspace.height,
+      common.workspace.depth
+    );
+
+    const wireframe = new THREE.LineSegments(
+      new THREE.EdgesGeometry(boxGeometry),
+      new THREE.LineBasicMaterial({ color: "lightgray", linewidth: 2 })
+    );
+
+    let floorGeometry = new THREE.PlaneGeometry(
+      common.workspace.width,
+      common.workspace.depth
+    );
+
+    const floorMaterial = new THREE.MeshBasicMaterial({
+      color: "lightgray",
+      side: THREE.DoubleSide,
+      opacity: 0.25,
+      transparent: true,
+      depthWrite: false,
+    });
+    this.move(floorGeometry, new THREE.Vector3(0, 0, -1));
+
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.lookAt(0, 1, 0);
+
+    this._workspaceView = new THREE.Group();
+    this._workspaceView.add(wireframe);
+    this._workspaceView.add(floor);
 
     this._scene.add(this._workspaceView);
   }
