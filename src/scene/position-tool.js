@@ -1,4 +1,5 @@
 import * as THREE from "three";
+
 import { getBounding } from "@/utils/utils";
 
 const size = 1;
@@ -6,7 +7,7 @@ const highlightedColor = "cyan";
 const xColor = "red";
 const yColor = "green";
 const zColor = "blue";
-const rotationColor = "lightgray";
+const rotationColor = 0xd3d3d3;
 
 class PositionTool {
   constructor() {

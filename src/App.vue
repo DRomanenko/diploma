@@ -3,47 +3,20 @@
 </template>
 
 <script>
-import { MyGUI } from "@/utils/my-gui";
-import { Scene } from "@/scene/scene";
-import { common } from "@/utils/common";
 import { GeometryLoader } from "@/utils/loader";
+import { Environment } from "@/environment/environment";
 
+let env;
 const loader = new GeometryLoader();
-let scene;
-let gui;
 
 export default {
   name: "App",
   mounted: async function () {
     const canvas = document.getElementById("app");
-    scene = new Scene(canvas);
-    gui = new MyGUI(this, scene);
-    scene.addGUI(gui);
+    env = new Environment(canvas);
   },
 
-  methods: {
-    async uploadSTL() {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.onchange = async (e) => {
-        const file = e.target.files[0];
-        const geometry = await loader.parseFile(file);
-        scene.addGeometry(geometry);
-        scene.packing();
-      };
-      input.click();
-    },
-
-    async saveImages() {
-      if (common.mode === "slicing") {
-        gui.disableAll(true);
-        await scene.saveImages();
-        gui.disableAll(false);
-      } else {
-        alert("Export is only available in 'slicing' mode");
-      }
-    },
-  },
+  methods: {},
 };
 </script>
 
