@@ -49,8 +49,18 @@ class MyGUI {
   }
 
   _initFolderSlicingResolution(folder) {
-    folder.add(common.slicing, "widthResolution").name("width");
-    folder.add(common.slicing, "heightResolution").name("height");
+    folder
+      .add(common.slicing, "widthResolution")
+      .name("width")
+      .min(100)
+      .max(2000)
+      .step(1);
+    folder
+      .add(common.slicing, "heightResolution")
+      .name("height")
+      .min(100)
+      .max(2000)
+      .step(1);
   }
 
   _initFolderClippingPlane(folder) {
